@@ -134,12 +134,20 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   }) => {
     const publicKey = import.meta.env.VITE_MP_PUBLIC_KEY;
     const MercadoPagoCtor = (window as any).MercadoPago;
-    if (!publicKey || !MercadoPagoCtor) return;
-    if (!args.bin || String(args.bin).length < 6) return;
+    if (!publicKey || !MercadoPagoCtor) {
+      setCardInstallmentsUnavailable(true);
+      setCardInstallmentsDebug('DEBUG[v2-installments]: SDK/PK ausente');
+      return;
+    }
+    if (!args.bin || String(args.bin).length < 6) {
+      setCardInstallmentsUnavailable(false);
+      setCardInstallmentsDebug('DEBUG[v2-installments]: BIN incompleto');
+      return;
+    }
 
     setCardInstallmentsLoading(true);
     setCardInstallmentsUnavailable(false);
-    setCardInstallmentsDebug('');
+    setCardInstallmentsDebug(`DEBUG[v2-installments]: bin=${String(args.bin)} amount=${Number(args.amount.toFixed(2))}`);
 
     try {
       const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
@@ -153,7 +161,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       try {
         setCardInstallmentsDebug(JSON.stringify(instResp));
       } catch {
-        setCardInstallmentsDebug('');
+        setCardInstallmentsDebug('DEBUG[v2-installments]: resposta não serializável');
       }
 
       const instArr = Array.isArray(instResp) ? instResp : instResp?.results;
@@ -179,10 +187,12 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         setCardInstallments(1);
         setCardInstallmentsUnavailable(true);
       }
-    } catch {
+    } catch (e: any) {
       setCardInstallmentOptions([]);
       setCardInstallments(1);
       setCardInstallmentsUnavailable(true);
+      const msg = e?.message ? String(e.message) : String(e);
+      setCardInstallmentsDebug(`DEBUG[v2-installments]: erro ${msg}`);
     } finally {
       setCardInstallmentsLoading(false);
     }
@@ -735,11 +745,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 {!cardInstallmentsLoading && cardInstallmentsUnavailable && (
                   <div className="text-xs text-slate-500">
                     Parcelamento indisponível para este cartão.
-                    {cardInstallmentsDebug ? (
-                      <div className="mt-2 rounded-md border border-slate-200 bg-white p-2 text-[10px] leading-snug text-slate-600 break-words">
-                        {cardInstallmentsDebug}
-                      </div>
-                    ) : null}
+                    <div className="mt-2 rounded-md border border-slate-200 bg-white p-2 text-[10px] leading-snug text-slate-600 break-words">
+                      {cardInstallmentsDebug || 'DEBUG[v2-installments]: sem resposta'}
+                    </div>
                   </div>
                 )}
                 {cardError && (
