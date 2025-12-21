@@ -13,16 +13,23 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { user, items, paymentMethod } = req.body ?? {};
+  const { user, items, paymentMethod, card } = req.body ?? {};
 
   if (!user?.email || !Array.isArray(items) || items.length === 0) {
     res.status(400).json({ success: false, error: 'Invalid payload' });
     return;
   }
 
-  if (paymentMethod !== 'pix') {
-    res.status(400).json({ success: false, error: 'Only PIX is supported in this checkout' });
+  if (paymentMethod !== 'pix' && paymentMethod !== 'credit_card') {
+    res.status(400).json({ success: false, error: 'Invalid payment method' });
     return;
+  }
+
+  if (paymentMethod === 'credit_card') {
+    if (!card?.token || !card?.paymentMethodId) {
+      res.status(400).json({ success: false, error: 'Missing card token or payment method' });
+      return;
+    }
   }
 
   const total = items.reduce((acc, it) => acc + Number(it?.price || 0), 0);
@@ -34,10 +41,9 @@ export default async function handler(req, res) {
   const siteUrl = process.env.PUBLIC_SITE_URL;
   const notificationUrl = siteUrl ? `${siteUrl.replace(/\/$/, '')}/api/webhooks/mercadopago` : undefined;
 
-  const payload = {
+  const basePayload = {
     transaction_amount: Number(total.toFixed(2)),
     description: items.map(i => i?.title).filter(Boolean).join(' + ').slice(0, 240) || 'Compra',
-    payment_method_id: 'pix',
     payer: {
       email: user.email
     },
@@ -50,6 +56,27 @@ export default async function handler(req, res) {
       items
     }
   };
+
+  const payload =
+    paymentMethod === 'pix'
+      ? {
+          ...basePayload,
+          payment_method_id: 'pix'
+        }
+      : {
+          ...basePayload,
+          token: card?.token,
+          installments: 1,
+          payment_method_id: card?.paymentMethodId,
+          issuer_id: card?.issuerId,
+          payer: {
+            ...basePayload.payer,
+            identification: {
+              type: 'CPF',
+              number: String(user?.document || '')
+            }
+          }
+        };
 
   try {
     const idempotencyKey = crypto.randomUUID();

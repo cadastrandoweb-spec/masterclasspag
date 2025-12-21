@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { OrderSummary } from './components/OrderSummary';
 import { CheckoutForm } from './components/CheckoutForm';
-import { PaymentMethod, OrderForm, PaymentState, PixPaymentData } from './types';
+import { CardPaymentData, PaymentMethod, OrderForm, PaymentState, PixPaymentData } from './types';
 import { processCheckout } from './services/mockService';
 
 const App: React.FC = () => {
@@ -97,7 +97,7 @@ const App: React.FC = () => {
     return isValid;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (cardPaymentData?: (CardPaymentData & { paymentMethodId?: string })) => {
     setPaymentState(prev => ({ ...prev, error: null }));
     if (!validate()) {
       // Scroll to top or show toast
@@ -108,7 +108,7 @@ const App: React.FC = () => {
     setPaymentState(prev => ({ ...prev, isProcessing: true }));
 
     try {
-      const result = await processCheckout(formData, paymentMethod, upsellSelected);
+      const result = await processCheckout(formData, paymentMethod, upsellSelected, cardPaymentData);
       
       if (result.success) {
         if (paymentMethod === PaymentMethod.PIX && result.paymentId) {
@@ -118,6 +118,11 @@ const App: React.FC = () => {
             qrCodeBase64: result.qrCodeBase64,
             ticketUrl: result.ticketUrl
           });
+        }
+
+        if (paymentMethod === PaymentMethod.CREDIT_CARD && result.status === 'approved') {
+          window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
+          return;
         }
 
         setPaymentState(prev => ({ ...prev, isSuccess: true }));

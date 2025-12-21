@@ -10,6 +10,12 @@ export interface PixPaymentData {
   ticketUrl?: string;
 }
 
+export interface CardPaymentData {
+  token: string;
+  bin: string;
+  issuerId?: string;
+}
+
 export interface Product {
   id: string;
   name: string;

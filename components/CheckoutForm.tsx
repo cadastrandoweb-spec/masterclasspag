@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, QrCode, CheckSquare, Square, AlertCircle, Lock, MapPin } from 'lucide-react';
-import { PaymentMethod, OrderForm, PixPaymentData } from '../types';
+import { CardPaymentData, PaymentMethod, OrderForm, PixPaymentData } from '../types';
 import { Input } from './ui/Input';
 import { UPSELL_PRODUCT } from '../constants';
 
@@ -11,7 +11,7 @@ interface CheckoutFormProps {
   setPaymentMethod: (method: PaymentMethod) => void;
   upsellSelected: boolean;
   setUpsellSelected: (selected: boolean) => void;
-  onSubmit: () => void;
+  onSubmit: (cardPaymentData?: (CardPaymentData & { paymentMethodId?: string })) => void;
   isProcessing: boolean;
   errors: Partial<Record<keyof OrderForm, string>>;
   pixPayment: PixPaymentData | null;
@@ -32,6 +32,14 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const [loadingCep, setLoadingCep] = useState(false);
   const [pixStatus, setPixStatus] = useState<string | null>(null);
   const [pixChecking, setPixChecking] = useState(false);
+  const [cardholderName, setCardholderName] = useState('');
+  const [mpReady, setMpReady] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
+  const [cardBin, setCardBin] = useState<string>('');
+  const [cardPaymentMethodId, setCardPaymentMethodId] = useState<string>('');
+  const [cardIssuerId, setCardIssuerId] = useState<string>('');
+  const [cardIssuers, setCardIssuers] = useState<Array<{ id: string; name?: string }> | null>(null);
+  const [cardTokenizing, setCardTokenizing] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,10 +60,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             neighborhood: data.bairro,
             city: data.localidade,
             state: data.uf,
-            // Clear address number if it was set, or keep it? usually keep blank to force entry
           }));
         } else {
-            // Handle CEP not found if needed
+          // Handle CEP not found if needed
         }
       } catch (error) {
         console.error("Erro ao buscar CEP:", error);
@@ -108,6 +115,145 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pixPayment?.paymentId, paymentMethod]);
+
+  useEffect(() => {
+    if (paymentMethod !== PaymentMethod.CREDIT_CARD) return;
+
+    const publicKey = (import.meta as any)?.env?.VITE_MP_PUBLIC_KEY;
+    if (!publicKey) {
+      setCardError('Chave pública do Mercado Pago não configurada.');
+      return;
+    }
+
+    const MercadoPagoCtor = (window as any)?.MercadoPago;
+    if (!MercadoPagoCtor) {
+      setCardError('SDK do Mercado Pago não carregou.');
+      return;
+    }
+
+    setCardError(null);
+
+    const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
+    const fields = mp.fields;
+
+    const cardNumberField = fields.create('cardNumber', { placeholder: 'Número do cartão' });
+    const securityCodeField = fields.create('securityCode', { placeholder: 'CVV' });
+    const expirationMonthField = fields.create('expirationMonth', { placeholder: 'MM' });
+    const expirationYearField = fields.create('expirationYear', { placeholder: 'AA' });
+
+    cardNumberField.mount('mp-card-number');
+    securityCodeField.mount('mp-security-code');
+    expirationMonthField.mount('mp-expiration-month');
+    expirationYearField.mount('mp-expiration-year');
+
+    const onBinChange = async (e: any) => {
+      const bin = e?.bin;
+      setCardBin(bin || '');
+      if (!bin) {
+        setCardPaymentMethodId('');
+        setCardIssuerId('');
+        setCardIssuers(null);
+        return;
+      }
+      try {
+        const pm = await mp.getPaymentMethods({ bin });
+        const pmId = pm?.results?.[0]?.id;
+        setCardPaymentMethodId(pmId || '');
+
+        if (!pmId) {
+          setCardIssuerId('');
+          setCardIssuers(null);
+          return;
+        }
+
+        const issuersResp = await mp.getIssuers({ paymentMethodId: pmId, bin });
+        const issuers = Array.isArray(issuersResp) ? issuersResp : issuersResp?.results;
+        if (Array.isArray(issuers) && issuers.length > 0) {
+          setCardIssuers(issuers.map((i: any) => ({ id: String(i?.id), name: i?.name ? String(i.name) : undefined })));
+          setCardIssuerId(String(issuers[0]?.id || ''));
+        } else {
+          setCardIssuerId('');
+          setCardIssuers(null);
+        }
+      } catch {
+        setCardPaymentMethodId('');
+        setCardIssuerId('');
+        setCardIssuers(null);
+      }
+    };
+
+    cardNumberField.on('binChange', onBinChange);
+    setMpReady(true);
+
+    return () => {
+      setMpReady(false);
+      setCardBin('');
+      setCardPaymentMethodId('');
+      setCardIssuerId('');
+      setCardIssuers(null);
+      try {
+        cardNumberField.unmount();
+        securityCodeField.unmount();
+        expirationMonthField.unmount();
+        expirationYearField.unmount();
+      } catch {
+        // ignore
+      }
+    };
+  }, [paymentMethod]);
+
+  const submitCreditCard = async () => {
+    const publicKey = (import.meta as any)?.env?.VITE_MP_PUBLIC_KEY;
+    const MercadoPagoCtor = (window as any)?.MercadoPago;
+    if (!publicKey || !MercadoPagoCtor) {
+      setCardError('Cartão indisponível no momento.');
+      return;
+    }
+
+    if (!cardholderName.trim()) {
+      setCardError('Informe o nome do titular do cartão.');
+      return;
+    }
+
+    const cleanDoc = formData.document.replace(/\D/g, '');
+    if (cleanDoc.length !== 11) {
+      setCardError('Para cartão, informe um CPF válido.');
+      return;
+    }
+
+    if (!mpReady) {
+      setCardError('Carregando campos do cartão...');
+      return;
+    }
+
+    if (!cardPaymentMethodId) {
+      setCardError('Não foi possível identificar o cartão.');
+      return;
+    }
+
+    setCardError(null);
+    setCardTokenizing(true);
+    try {
+      const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
+      const tokenResp = await mp.fields.createCardToken({
+        cardholderName: cardholderName.trim(),
+        identificationType: 'CPF',
+        identificationNumber: cleanDoc
+      });
+
+      const token = tokenResp?.id;
+      if (!token) {
+        setCardError('Não foi possível tokenizar o cartão.');
+        return;
+      }
+
+      onSubmit({ token, bin: cardBin, issuerId: cardIssuerId || undefined, paymentMethodId: cardPaymentMethodId });
+    } catch {
+      setCardError('Erro ao processar cartão.');
+    } finally {
+      setCardTokenizing(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8">
@@ -259,7 +405,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 placeholder="Cidade"
                 error={!!errors.city}
                 errorMessage={errors.city}
-                readOnly // Usually easier if read-only from API, but can be editable
+                readOnly 
                 className="bg-slate-50 opacity-90"
               />
               <Input 
@@ -370,8 +516,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
           {/* Credit Card Option */}
           <div 
-            onClick={() => {}}
-            className="cursor-not-allowed opacity-50 flex items-center space-x-3"
+            onClick={() => setPaymentMethod(PaymentMethod.CREDIT_CARD)}
+            className={`cursor-pointer flex items-center space-x-3 ${paymentMethod === PaymentMethod.CREDIT_CARD ? '' : 'opacity-70 hover:opacity-100'}`}
           >
              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === PaymentMethod.CREDIT_CARD ? 'border-brand-600' : 'border-slate-300'}`}>
                   {paymentMethod === PaymentMethod.CREDIT_CARD && <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />}
@@ -381,6 +527,84 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                <span>Cartão de Crédito</span>
              </div>
           </div>
+
+          {paymentMethod === PaymentMethod.CREDIT_CARD && (
+            <div className="ml-8 border border-slate-200 rounded-lg p-4 bg-slate-50 text-sm text-slate-600">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    Nome do titular <span className="text-brand-600">*</span>
+                  </label>
+                  <input
+                    value={cardholderName}
+                    onChange={(e) => setCardholderName(e.target.value)}
+                    className="w-full bg-transparent py-2 text-slate-800 focus:outline-none placeholder-slate-400 border-b-2 border-slate-200 focus:border-brand-600 transition-colors"
+                    placeholder="Como no cartão"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-600 mb-1">
+                    Número do cartão <span className="text-brand-600">*</span>
+                  </label>
+                  <div id="mp-card-number" className="bg-white rounded-md border border-slate-200 p-3" />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Validade (MM) <span className="text-brand-600">*</span>
+                    </label>
+                    <div id="mp-expiration-month" className="bg-white rounded-md border border-slate-200 p-3" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Validade (AA) <span className="text-brand-600">*</span>
+                    </label>
+                    <div id="mp-expiration-year" className="bg-white rounded-md border border-slate-200 p-3" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      CVV <span className="text-brand-600">*</span>
+                    </label>
+                    <div id="mp-security-code" className="bg-white rounded-md border border-slate-200 p-3" />
+                  </div>
+                </div>
+
+                {Array.isArray(cardIssuers) && cardIssuers.length > 1 && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Banco (Emissor) <span className="text-brand-600">*</span>
+                    </label>
+                    <select
+                      value={cardIssuerId}
+                      onChange={(e) => setCardIssuerId(e.target.value)}
+                      className="w-full bg-white rounded-md border border-slate-200 p-3 text-slate-800"
+                    >
+                      {cardIssuers.map((i) => (
+                        <option key={i.id} value={i.id}>
+                          {i.name ? i.name : i.id}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {cardError && (
+                  <div className="text-xs text-red-500">{cardError}</div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={submitCreditCard}
+                  disabled={isProcessing || cardTokenizing}
+                  className="px-3 py-2 rounded-md bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-colors disabled:opacity-60"
+                >
+                  {cardTokenizing ? 'Processando cartão...' : 'Pagar com cartão'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -424,7 +648,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         )}
         
         <button
-          onClick={onSubmit}
+          onClick={paymentMethod === PaymentMethod.CREDIT_CARD ? submitCreditCard : () => onSubmit()}
           disabled={isProcessing}
           className={`
             w-full py-4 rounded-lg shadow-lg text-white font-bold text-lg uppercase tracking-wide

@@ -1,12 +1,13 @@
-import { OrderForm, PaymentMethod } from '../types';
+import { CardPaymentData, OrderForm, PaymentMethod } from '../types';
 import { MAIN_PRODUCT, UPSELL_PRODUCT } from '../constants';
 
 // This simulates the behavior of the Node.js backend
 export const processCheckout = async (
   formData: OrderForm,
   paymentMethod: PaymentMethod,
-  hasUpsell: boolean
-): Promise<{ success: boolean; message: string; paymentId?: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string }> => {
+  hasUpsell: boolean,
+  cardPaymentData?: (CardPaymentData & { paymentMethodId?: string })
+): Promise<{ success: boolean; message: string; paymentId?: string; status?: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string }> => {
   const items = [
     { id: MAIN_PRODUCT.id, title: MAIN_PRODUCT.name, price: MAIN_PRODUCT.price },
     ...(hasUpsell ? [{ id: UPSELL_PRODUCT.id, title: UPSELL_PRODUCT.name, price: UPSELL_PRODUCT.price }] : [])
@@ -23,7 +24,8 @@ export const processCheckout = async (
         document: formData.document.replace(/\D/g, '')
       },
       items,
-      paymentMethod
+      paymentMethod,
+      card: paymentMethod === PaymentMethod.CREDIT_CARD ? cardPaymentData : undefined
     })
   });
 
@@ -43,6 +45,7 @@ export const processCheckout = async (
     success: Boolean(data?.success),
     message: data?.success ? 'Pagamento iniciado com sucesso!' : 'Falha ao iniciar pagamento.',
     paymentId: data?.paymentId,
+    status: data?.status,
     qrCode: data?.qrCode,
     qrCodeBase64: data?.qrCodeBase64,
     ticketUrl: data?.ticketUrl
