@@ -46,6 +46,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const [cardInstallments, setCardInstallments] = useState<number>(1);
   const [cardInstallmentsLoading, setCardInstallmentsLoading] = useState(false);
   const [cardInstallmentsUnavailable, setCardInstallmentsUnavailable] = useState(false);
+  const [cardInstallmentsDebug, setCardInstallmentsDebug] = useState<string>('');
 
   const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
 
@@ -138,14 +139,22 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
     setCardInstallmentsLoading(true);
     setCardInstallmentsUnavailable(false);
+    setCardInstallmentsDebug('');
 
     try {
       const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
       const instResp = await mp.getInstallments({
         amount: Number(args.amount.toFixed(2)),
         bin: args.bin,
-        paymentTypeId: 'credit_card'
+        paymentTypeId: 'credit_card',
+        locale: 'pt-BR'
       });
+
+      try {
+        setCardInstallmentsDebug(JSON.stringify(instResp));
+      } catch {
+        setCardInstallmentsDebug('');
+      }
 
       const instArr = Array.isArray(instResp) ? instResp : instResp?.results;
       const payerCosts = instArr?.[0]?.payer_costs;
@@ -283,6 +292,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       setCardInstallments(1);
       setCardInstallmentsUnavailable(false);
       setCardInstallmentsLoading(false);
+      setCardInstallmentsDebug('');
       try {
         cardNumberField.unmount();
         securityCodeField.unmount();
@@ -723,7 +733,14 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                   <div className="text-xs text-slate-500">Carregando parcelamento...</div>
                 )}
                 {!cardInstallmentsLoading && cardInstallmentsUnavailable && (
-                  <div className="text-xs text-slate-500">Parcelamento indisponível para este cartão.</div>
+                  <div className="text-xs text-slate-500">
+                    Parcelamento indisponível para este cartão.
+                    {cardInstallmentsDebug ? (
+                      <div className="mt-2 rounded-md border border-slate-200 bg-white p-2 text-[10px] leading-snug text-slate-600 break-words">
+                        {cardInstallmentsDebug}
+                      </div>
+                    ) : null}
+                  </div>
                 )}
                 {cardError && (
                   <div className="text-xs text-red-500">{cardError}</div>
