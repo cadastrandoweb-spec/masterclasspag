@@ -14,6 +14,7 @@ export interface CardPaymentData {
   token: string;
   bin: string;
   issuerId?: string;
+  installments?: number;
 }
 
 export interface Product {

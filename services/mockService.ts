@@ -6,8 +6,13 @@ export const processCheckout = async (
   formData: OrderForm,
   paymentMethod: PaymentMethod,
   hasUpsell: boolean,
-  cardPaymentData?: (CardPaymentData & { paymentMethodId?: string })
+  cardPaymentData?: (CardPaymentData & { 
+    paymentMethodId?: string; 
+    installments?: number; 
+    issuerId?: string 
+  })
 ): Promise<{ success: boolean; message: string; paymentId?: string; status?: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string }> => {
+
   const items = [
     { id: MAIN_PRODUCT.id, title: MAIN_PRODUCT.name, price: MAIN_PRODUCT.price },
     ...(hasUpsell ? [{ id: UPSELL_PRODUCT.id, title: UPSELL_PRODUCT.name, price: UPSELL_PRODUCT.price }] : [])

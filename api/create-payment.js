@@ -66,7 +66,7 @@ export default async function handler(req, res) {
       : {
           ...basePayload,
           token: card?.token,
-          installments: 1,
+          installments: Number(card?.installments || 1),
           payment_method_id: card?.paymentMethodId,
           issuer_id: card?.issuerId,
           payer: {

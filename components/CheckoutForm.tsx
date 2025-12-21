@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, QrCode, CheckSquare, Square, AlertCircle, Lock, MapPin } from 'lucide-react';
 import { CardPaymentData, PaymentMethod, OrderForm, PixPaymentData } from '../types';
 import { Input } from './ui/Input';
-import { UPSELL_PRODUCT } from '../constants';
+import { MAIN_PRODUCT, UPSELL_PRODUCT } from '../constants';
 
 interface CheckoutFormProps {
   formData: OrderForm;
@@ -40,6 +40,15 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const [cardIssuerId, setCardIssuerId] = useState<string>('');
   const [cardIssuers, setCardIssuers] = useState<Array<{ id: string; name?: string }> | null>(null);
   const [cardTokenizing, setCardTokenizing] = useState(false);
+  const [cardInstallmentOptions, setCardInstallmentOptions] = useState<
+    Array<{ installments: number; installmentAmount: number; totalAmount: number; message?: string }>
+  >([]);
+  const [cardInstallments, setCardInstallments] = useState<number>(1);
+
+  const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+
+  const formatBRL = (v: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -116,6 +125,64 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pixPayment?.paymentId, paymentMethod]);
 
+  const refreshInstallments = async (args: {
+    bin: string;
+    paymentMethodId: string;
+    issuerId?: string;
+    amount: number;
+  }) => {
+    const publicKey = import.meta.env.VITE_MP_PUBLIC_KEY;
+    const MercadoPagoCtor = (window as any).MercadoPago;
+    if (!publicKey || !MercadoPagoCtor) return;
+
+    try {
+      const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
+      const instResp = await mp.getInstallments({
+        amount: Number(args.amount.toFixed(2)),
+        bin: args.bin,
+        paymentMethodId: args.paymentMethodId,
+        issuerId: args.issuerId
+      });
+
+      const instArr = Array.isArray(instResp) ? instResp : instResp?.results;
+      const payerCosts = instArr?.[0]?.payer_costs;
+      if (Array.isArray(payerCosts) && payerCosts.length > 0) {
+        const mapped = payerCosts
+          .filter((pc: any) => Number(pc?.installments) >= 1)
+          .map((pc: any) => ({
+            installments: Number(pc?.installments),
+            installmentAmount: Number(pc?.installment_amount),
+            totalAmount: Number(pc?.total_amount),
+            message: pc?.recommended_message ? String(pc.recommended_message) : undefined
+          }))
+          .filter((x: any) => Number.isFinite(x.installments) && x.installments <= 12);
+
+        setCardInstallmentOptions(mapped);
+        if (!mapped.some(m => m.installments === cardInstallments)) {
+          setCardInstallments(mapped?.[0]?.installments || 1);
+        }
+      } else {
+        setCardInstallmentOptions([]);
+        setCardInstallments(1);
+      }
+    } catch {
+      setCardInstallmentOptions([]);
+      setCardInstallments(1);
+    }
+  };
+
+  useEffect(() => {
+    if (paymentMethod !== PaymentMethod.CREDIT_CARD) return;
+    if (!cardBin || !cardPaymentMethodId) return;
+    void refreshInstallments({
+      bin: cardBin,
+      paymentMethodId: cardPaymentMethodId,
+      issuerId: cardIssuerId || undefined,
+      amount: totalAmount
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod, cardBin, cardPaymentMethodId, cardIssuerId, totalAmount]);
+
   useEffect(() => {
     if (paymentMethod !== PaymentMethod.CREDIT_CARD) return;
 
@@ -153,6 +220,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         setCardPaymentMethodId('');
         setCardIssuerId('');
         setCardIssuers(null);
+        setCardInstallmentOptions([]);
+        setCardInstallments(1);
         return;
       }
       try {
@@ -163,6 +232,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         if (!pmId) {
           setCardIssuerId('');
           setCardIssuers(null);
+          setCardInstallmentOptions([]);
+          setCardInstallments(1);
           return;
         }
 
@@ -175,10 +246,20 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           setCardIssuerId('');
           setCardIssuers(null);
         }
+
+        const issuerToUse = Array.isArray(issuers) && issuers.length > 0 ? String(issuers[0]?.id || '') : undefined;
+        await refreshInstallments({
+          bin,
+          paymentMethodId: pmId,
+          issuerId: issuerToUse,
+          amount: totalAmount
+        });
       } catch {
         setCardPaymentMethodId('');
         setCardIssuerId('');
         setCardIssuers(null);
+        setCardInstallmentOptions([]);
+        setCardInstallments(1);
       }
     };
 
@@ -191,6 +272,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       setCardPaymentMethodId('');
       setCardIssuerId('');
       setCardIssuers(null);
+      setCardInstallmentOptions([]);
+      setCardInstallments(1);
       try {
         cardNumberField.unmount();
         securityCodeField.unmount();
@@ -247,7 +330,13 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         return;
       }
 
-      onSubmit({ token, bin: cardBin, issuerId: cardIssuerId || undefined, paymentMethodId: cardPaymentMethodId });
+      onSubmit({
+        token,
+        bin: cardBin,
+        issuerId: cardIssuerId || undefined,
+        installments: cardInstallments,
+        paymentMethodId: cardPaymentMethodId
+      });
     } catch {
       setCardError('Erro ao processar cartão.');
     } finally {
@@ -590,6 +679,37 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                   </div>
                 )}
 
+                {Array.isArray(cardInstallmentOptions) && cardInstallmentOptions.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-slate-600 mb-1">
+                      Parcelamento <span className="text-brand-600">*</span>
+                    </label>
+                    <select
+                      value={String(cardInstallments)}
+                      onChange={(e) => setCardInstallments(Number(e.target.value || 1))}
+                      className="w-full bg-white rounded-md border border-slate-200 p-3 text-slate-800"
+                    >
+                      {cardInstallmentOptions
+                        .slice()
+                        .sort((a, b) => a.installments - b.installments)
+                        .map((opt) => (
+                          <option key={opt.installments} value={String(opt.installments)}>
+                            {opt.message
+                              ? opt.message
+                              : `${opt.installments}x de ${formatBRL(opt.installmentAmount)} (total ${formatBRL(opt.totalAmount)})`}
+                          </option>
+                        ))}
+                    </select>
+                    {cardInstallments > 1 && (
+                      <div className="mt-1 text-xs text-slate-500">
+                        Total: {formatBRL(
+                          cardInstallmentOptions.find((o) => o.installments === cardInstallments)?.totalAmount ||
+                            totalAmount
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
                 {cardError && (
                   <div className="text-xs text-red-500">{cardError}</div>
                 )}
