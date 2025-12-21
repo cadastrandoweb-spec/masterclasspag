@@ -5,7 +5,7 @@ export const MAIN_PRODUCT: Product = {
   name: 'Mestres do Tráfego Vitalício',
   price: 67.00,
   // OBS: Substitua a URL abaixo pelo link direto da imagem que você enviou após hospedá-la
-  image: '/mestres.png'
+  image: '/mestres.webp'
 };
 
 export const UPSELL_PRODUCT: Product = {

@@ -27,7 +27,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected }) =>
 
       {/* Product Image */}
       <div className="relative group -mt-2">
-        <div className="aspect-[4/5] w-full max-w-[280px] mx-auto overflow-hidden rounded-xl bg-slate-200 shadow-md">
+        <div className="aspect-[4/5] w-full max-w-[180px] mx-auto overflow-hidden rounded-xl bg-slate-200 shadow-md">
           <img 
             src={MAIN_PRODUCT.image} 
             alt={MAIN_PRODUCT.name}
