@@ -10,7 +10,7 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected }) =>
   const total = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
 
   return (
-    <div className="flex flex-col space-y-6">
+    <div className="flex flex-col space-y-4">
       {/* Header */}
       <div className="flex items-center space-x-2 mb-2">
         <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-md flex items-center justify-center text-white text-xs font-bold">
@@ -26,15 +26,20 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected }) =>
       </div>
 
       {/* Product Image */}
-      <div className="relative group">
-        <div className="aspect-[4/5] w-full overflow-hidden rounded-xl bg-slate-200 shadow-md">
+      <div className="relative group -mt-2">
+        <div className="aspect-[4/5] w-full max-w-[280px] mx-auto overflow-hidden rounded-xl bg-slate-200 shadow-md">
           <img 
             src={MAIN_PRODUCT.image} 
             alt={MAIN_PRODUCT.name}
+            width={560}
+            height={700}
+            loading="eager"
+            fetchPriority="high"
+            decoding="async"
             className="h-full w-full object-cover object-center"
           />
         </div>
-        <div className="mt-3 text-center">
+        <div className="mt-2 text-center">
           <h3 className="text-slate-800 font-medium">{MAIN_PRODUCT.name}</h3>
         </div>
       </div>
