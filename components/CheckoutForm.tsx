@@ -154,7 +154,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       const instResp = await mp.getInstallments({
         amount: Number(args.amount.toFixed(2)),
         bin: args.bin,
-        paymentTypeId: 'credit_card',
         locale: 'pt-BR'
       });
 
@@ -191,24 +190,41 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       setCardInstallmentOptions([]);
       setCardInstallments(1);
       setCardInstallmentsUnavailable(true);
+      const safeString = () => {
+        try {
+          if (typeof e === 'string') return e;
+          if (e && typeof e.toString === 'function' && e.toString !== Object.prototype.toString) return e.toString();
+        } catch {
+          // ignore
+        }
+        try {
+          return String(e);
+        } catch {
+          return 'unknown_error';
+        }
+      };
+
       const details: any = {
         message: e?.message,
         name: e?.name,
         status: e?.status,
         error: e?.error,
         cause: e?.cause,
-        data: e?.data
+        data: e?.data,
+        asString: safeString()
       };
+
       let rendered = '';
       try {
         rendered = JSON.stringify(details);
       } catch {
         try {
-          rendered = JSON.stringify(e);
+          rendered = JSON.stringify(e, Object.getOwnPropertyNames(e));
         } catch {
-          rendered = String(e);
+          rendered = safeString();
         }
       }
+
       setCardInstallmentsDebug(`DEBUG[v2-installments]: erro ${rendered}`);
     } finally {
       setCardInstallmentsLoading(false);
