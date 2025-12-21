@@ -898,7 +898,16 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         </button>
         
         <p className="mt-4 text-center text-xs text-slate-400 italic">
-          Ao seguir para o processo de pagamento declaro estar de acordo com os <a href="#" className="underline hover:text-slate-500">termos de uso</a>.
+          Ao seguir para o processo de pagamento declaro estar de acordo com os{' '}
+          <a
+            href="https://docs.google.com/document/d/e/2PACX-1vSMUB6hV_SVU3KWbtfQYsPsWw4MXwA6152SwnQsUOCnraB-2CD1uktECgUEO7OGN97hCKGJKzz0Hzip/pub"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-slate-500"
+          >
+            termos de uso
+          </a>
+          .
         </p>
       </div>
 
