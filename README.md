@@ -18,3 +18,17 @@ View your app in AI Studio: https://ai.studio/apps/drive/10-xlcXpdBwHEm3JqWBZw3n
 2. Create a `.env.local` (not committed) based on `.env.example` and set `GEMINI_API_KEY`
 3. Run the app (frontend + local API):
    `npm run dev`
+
+## Deploy on Vercel
+
+1. Import this repository in Vercel
+2. Set the following Environment Variables (Project Settings -> Environment Variables):
+   - `GEMINI_API_KEY`
+3. Build & Output:
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+
+The serverless endpoints are available under:
+- `/api/health`
+- `/api/create-payment`
+- `/api/gemini/generate`
