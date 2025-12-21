@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CreditCard, QrCode, CheckSquare, Square, AlertCircle, Lock, MapPin } from 'lucide-react';
 import { PaymentMethod, OrderForm, PixPaymentData } from '../types';
 import { Input } from './ui/Input';
@@ -93,6 +93,21 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       setPixChecking(false);
     }
   };
+
+  useEffect(() => {
+    if (!pixPayment?.paymentId) return;
+    if (paymentMethod !== PaymentMethod.PIX) return;
+    if (pixStatus === 'approved') return;
+
+    const interval = window.setInterval(() => {
+      void checkPixStatus();
+    }, 4000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pixPayment?.paymentId, paymentMethod]);
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8">
@@ -299,6 +314,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
                 {pixPayment?.paymentId && (
                   <div className="mt-4 border-t border-slate-200 pt-4">
+                    <div className="text-xs text-slate-500 mb-2">
+                      Após o pagamento, confirmamos automaticamente (pode levar alguns segundos).
+                    </div>
                     {pixPayment.qrCodeBase64 && (
                       <div className="flex justify-center">
                         <img
