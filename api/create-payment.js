@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -50,11 +52,13 @@ export default async function handler(req, res) {
   };
 
   try {
+    const idempotencyKey = crypto.randomUUID();
     const r = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': idempotencyKey
       },
       body: JSON.stringify(payload)
     });
