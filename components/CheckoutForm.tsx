@@ -129,8 +129,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
   const refreshInstallments = async (args: {
     bin: string;
-    paymentMethodId: string;
-    issuerId?: string;
     amount: number;
   }) => {
     const publicKey = import.meta.env.VITE_MP_PUBLIC_KEY;
@@ -146,8 +144,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       const instResp = await mp.getInstallments({
         amount: Number(args.amount.toFixed(2)),
         bin: args.bin,
-        paymentMethodId: args.paymentMethodId,
-        issuerId: args.issuerId
+        paymentTypeId: 'credit_card'
       });
 
       const instArr = Array.isArray(instResp) ? instResp : instResp?.results;
@@ -187,8 +184,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     if (!cardBin || String(cardBin).length < 6 || !cardPaymentMethodId) return;
     void refreshInstallments({
       bin: cardBin,
-      paymentMethodId: cardPaymentMethodId,
-      issuerId: cardIssuerId || undefined,
       amount: totalAmount
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,11 +256,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           setCardIssuers(null);
         }
 
-        const issuerToUse = Array.isArray(issuers) && issuers.length > 0 ? String(issuers[0]?.id || '') : undefined;
         await refreshInstallments({
           bin,
-          paymentMethodId: pmId,
-          issuerId: issuerToUse,
           amount: totalAmount
         });
       } catch {
