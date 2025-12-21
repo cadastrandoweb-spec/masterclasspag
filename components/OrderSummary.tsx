@@ -13,10 +13,16 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected }) =>
     <div className="flex flex-col space-y-4">
       {/* Header */}
       <div className="flex items-center space-x-2 mb-2">
-        <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-blue-500 rounded-md flex items-center justify-center text-white text-xs font-bold">
-          MT
-        </div>
-        <span className="font-semibold text-slate-700">Mestres Do Tráfego</span>
+        <img
+          src="/logo.png"
+          alt="Mestres Do Tráfego"
+          width={128}
+          height={32}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
+          className="h-8 w-auto"
+        />
       </div>
 
       {/* Trust Badge */}
