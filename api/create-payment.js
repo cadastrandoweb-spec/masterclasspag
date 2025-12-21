@@ -62,7 +62,26 @@ export default async function handler(req, res) {
     const data = await r.json();
 
     if (!r.ok) {
-      res.status(r.status).json({ success: false, error: 'Mercado Pago error', details: data });
+      const causeText = Array.isArray(data?.cause)
+        ? data.cause
+            .map(c => {
+              const code = c?.code ? String(c.code) : '';
+              const desc = c?.description ? String(c.description) : '';
+              const detail = c?.detail ? String(c.detail) : '';
+              return [code, desc, detail].filter(Boolean).join(' - ');
+            })
+            .filter(Boolean)
+            .join(' | ')
+        : '';
+
+      const mpMessage =
+        data?.message ||
+        data?.error ||
+        data?.status ||
+        (causeText ? `Mercado Pago: ${causeText}` : null) ||
+        'Mercado Pago error';
+
+      res.status(r.status).json({ success: false, error: String(mpMessage), details: data });
       return;
     }
 
