@@ -28,7 +28,14 @@ export const processCheckout = async (
   });
 
   if (!resp.ok) {
-    throw new Error('Payment creation failed');
+    let details: any = null;
+    try {
+      details = await resp.json();
+    } catch {
+      // ignore
+    }
+    const msg = details?.error || details?.message || `Payment creation failed (${resp.status})`;
+    throw new Error(msg);
   }
 
   const data = await resp.json();

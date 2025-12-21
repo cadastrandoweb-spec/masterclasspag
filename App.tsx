@@ -5,24 +5,6 @@ import { PaymentMethod, OrderForm, PaymentState, PixPaymentData } from './types'
 import { processCheckout } from './services/mockService';
 
 const App: React.FC = () => {
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
-
-  if (pathname === '/obrigado') {
-    return (
-      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex justify-center">
-        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-10">
-          <h1 className="text-2xl font-bold text-slate-800">Pagamento aprovado!</h1>
-          <p className="mt-3 text-slate-600">
-            Seu acesso será liberado automaticamente.
-          </p>
-          <p className="mt-2 text-slate-500 text-sm">
-            Você já pode fechar esta página.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // --- STATE ---
   const [upsellSelected, setUpsellSelected] = useState<boolean>(false);
   
@@ -116,13 +98,14 @@ const App: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    setPaymentState(prev => ({ ...prev, error: null }));
     if (!validate()) {
       // Scroll to top or show toast
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    setPaymentState(prev => ({ ...prev, isProcessing: true, error: null }));
+    setPaymentState(prev => ({ ...prev, isProcessing: true }));
 
     try {
       const result = await processCheckout(formData, paymentMethod, upsellSelected);
@@ -140,7 +123,8 @@ const App: React.FC = () => {
         setPaymentState(prev => ({ ...prev, isSuccess: true }));
       }
     } catch (err) {
-      setPaymentState(prev => ({ ...prev, error: 'Erro ao processar pagamento.' }));
+      const message = err instanceof Error ? err.message : 'Erro ao processar pagamento.';
+      setPaymentState(prev => ({ ...prev, error: message }));
     } finally {
       setPaymentState(prev => ({ ...prev, isProcessing: false }));
     }
@@ -171,6 +155,11 @@ const App: React.FC = () => {
             errors={errors}
             pixPayment={pixPayment}
           />
+          {paymentState.error && (
+            <div className="mt-4 bg-red-100 text-red-600 text-sm py-3 px-4 rounded-md text-center font-medium">
+              {paymentState.error}
+            </div>
+          )}
         </div>
 
       </div>

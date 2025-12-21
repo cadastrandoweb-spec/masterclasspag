@@ -85,7 +85,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       const status = data?.status;
       setPixStatus(status || null);
       if (status === 'approved') {
-        window.location.href = '/obrigado';
+        window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
       }
     } catch {
       // ignore
