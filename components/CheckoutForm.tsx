@@ -119,13 +119,13 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   useEffect(() => {
     if (paymentMethod !== PaymentMethod.CREDIT_CARD) return;
 
-    const publicKey = (import.meta as any)?.env?.VITE_MP_PUBLIC_KEY;
+    const publicKey = import.meta.env.VITE_MP_PUBLIC_KEY;
     if (!publicKey) {
       setCardError('Chave pública do Mercado Pago não configurada.');
       return;
     }
 
-    const MercadoPagoCtor = (window as any)?.MercadoPago;
+    const MercadoPagoCtor = (window as any).MercadoPago;
     if (!MercadoPagoCtor) {
       setCardError('SDK do Mercado Pago não carregou.');
       return;
@@ -203,8 +203,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   }, [paymentMethod]);
 
   const submitCreditCard = async () => {
-    const publicKey = (import.meta as any)?.env?.VITE_MP_PUBLIC_KEY;
-    const MercadoPagoCtor = (window as any)?.MercadoPago;
+    const publicKey = import.meta.env.VITE_MP_PUBLIC_KEY;
+    const MercadoPagoCtor = (window as any).MercadoPago;
     if (!publicKey || !MercadoPagoCtor) {
       setCardError('Cartão indisponível no momento.');
       return;
