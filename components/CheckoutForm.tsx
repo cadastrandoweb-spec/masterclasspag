@@ -191,8 +191,25 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       setCardInstallmentOptions([]);
       setCardInstallments(1);
       setCardInstallmentsUnavailable(true);
-      const msg = e?.message ? String(e.message) : String(e);
-      setCardInstallmentsDebug(`DEBUG[v2-installments]: erro ${msg}`);
+      const details: any = {
+        message: e?.message,
+        name: e?.name,
+        status: e?.status,
+        error: e?.error,
+        cause: e?.cause,
+        data: e?.data
+      };
+      let rendered = '';
+      try {
+        rendered = JSON.stringify(details);
+      } catch {
+        try {
+          rendered = JSON.stringify(e);
+        } catch {
+          rendered = String(e);
+        }
+      }
+      setCardInstallmentsDebug(`DEBUG[v2-installments]: erro ${rendered}`);
     } finally {
       setCardInstallmentsLoading(false);
     }
