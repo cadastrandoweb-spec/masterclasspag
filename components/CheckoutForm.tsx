@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CreditCard, QrCode, CheckSquare, Square, AlertCircle, Lock, MapPin } from 'lucide-react';
-import { PaymentMethod, OrderForm } from '../types';
+import { PaymentMethod, OrderForm, PixPaymentData } from '../types';
 import { Input } from './ui/Input';
 import { UPSELL_PRODUCT } from '../constants';
 
@@ -14,6 +14,7 @@ interface CheckoutFormProps {
   onSubmit: () => void;
   isProcessing: boolean;
   errors: Partial<Record<keyof OrderForm, string>>;
+  pixPayment: PixPaymentData | null;
 }
 
 export const CheckoutForm: React.FC<CheckoutFormProps> = ({
@@ -25,9 +26,12 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   setUpsellSelected,
   onSubmit,
   isProcessing,
-  errors
+  errors,
+  pixPayment
 }) => {
   const [loadingCep, setLoadingCep] = useState(false);
+  const [pixStatus, setPixStatus] = useState<string | null>(null);
+  const [pixChecking, setPixChecking] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -62,6 +66,33 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   };
 
   const hasErrors = Object.keys(errors).length > 0;
+
+  const copyPixCode = async () => {
+    if (!pixPayment?.qrCode) return;
+    try {
+      await navigator.clipboard.writeText(pixPayment.qrCode);
+    } catch {
+      // ignore
+    }
+  };
+
+  const checkPixStatus = async () => {
+    if (!pixPayment?.paymentId) return;
+    setPixChecking(true);
+    try {
+      const r = await fetch(`/api/payment-status?id=${encodeURIComponent(pixPayment.paymentId)}`);
+      const data = await r.json();
+      const status = data?.status;
+      setPixStatus(status || null);
+      if (status === 'approved') {
+        window.location.href = '/obrigado';
+      }
+    } catch {
+      // ignore
+    } finally {
+      setPixChecking(false);
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-8">
@@ -265,14 +296,64 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                   <li>O(s) produto(s) será(ão) liberado(s) somente após recebermos a confirmação de pagamento;</li>
                   <li>Fique atento(a) à data de vencimento. Após a expiração, será necessário refazer seu pedido.</li>
                 </ul>
+
+                {pixPayment?.paymentId && (
+                  <div className="mt-4 border-t border-slate-200 pt-4">
+                    {pixPayment.qrCodeBase64 && (
+                      <div className="flex justify-center">
+                        <img
+                          src={`data:image/png;base64,${pixPayment.qrCodeBase64}`}
+                          alt="QR Code PIX"
+                          width={220}
+                          height={220}
+                          loading="eager"
+                          decoding="async"
+                          className="rounded-md bg-white p-2"
+                        />
+                      </div>
+                    )}
+
+                    {pixPayment.qrCode && (
+                      <div className="mt-3">
+                        <div className="text-xs text-slate-500 mb-2">PIX Copia e Cola</div>
+                        <textarea
+                          readOnly
+                          value={pixPayment.qrCode}
+                          className="w-full text-xs p-2 rounded-md border border-slate-200 bg-white text-slate-700"
+                          rows={3}
+                        />
+                        <div className="mt-2 flex gap-2">
+                          <button
+                            type="button"
+                            onClick={copyPixCode}
+                            className="px-3 py-2 rounded-md bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-colors"
+                          >
+                            Copiar código
+                          </button>
+                          <button
+                            type="button"
+                            onClick={checkPixStatus}
+                            disabled={pixChecking}
+                            className="px-3 py-2 rounded-md border border-slate-200 text-slate-700 text-xs font-semibold hover:bg-slate-100 transition-colors disabled:opacity-60"
+                          >
+                            {pixChecking ? 'Verificando...' : 'Já paguei'}
+                          </button>
+                        </div>
+                        {pixStatus && (
+                          <div className="mt-2 text-xs text-slate-500">Status: {pixStatus}</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
 
           {/* Credit Card Option */}
           <div 
-            onClick={() => setPaymentMethod(PaymentMethod.CREDIT_CARD)}
-            className={`cursor-pointer flex items-center space-x-3 ${paymentMethod === PaymentMethod.CREDIT_CARD ? '' : 'opacity-70 hover:opacity-100'}`}
+            onClick={() => {}}
+            className="cursor-not-allowed opacity-50 flex items-center space-x-3"
           >
              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${paymentMethod === PaymentMethod.CREDIT_CARD ? 'border-brand-600' : 'border-slate-300'}`}>
                   {paymentMethod === PaymentMethod.CREDIT_CARD && <div className="w-2.5 h-2.5 rounded-full bg-brand-600" />}

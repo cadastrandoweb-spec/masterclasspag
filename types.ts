@@ -3,6 +3,13 @@ export enum PaymentMethod {
   CREDIT_CARD = 'credit_card'
 }
 
+export interface PixPaymentData {
+  paymentId: string;
+  qrCode?: string;
+  qrCodeBase64?: string;
+  ticketUrl?: string;
+}
+
 export interface Product {
   id: string;
   name: string;

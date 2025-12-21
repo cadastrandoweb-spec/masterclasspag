@@ -1,10 +1,28 @@
 import React, { useState } from 'react';
 import { OrderSummary } from './components/OrderSummary';
 import { CheckoutForm } from './components/CheckoutForm';
-import { PaymentMethod, OrderForm, PaymentState } from './types';
+import { PaymentMethod, OrderForm, PaymentState, PixPaymentData } from './types';
 import { processCheckout } from './services/mockService';
 
 const App: React.FC = () => {
+  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+
+  if (pathname === '/obrigado') {
+    return (
+      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex justify-center">
+        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-slate-100 p-6 md:p-10">
+          <h1 className="text-2xl font-bold text-slate-800">Pagamento aprovado!</h1>
+          <p className="mt-3 text-slate-600">
+            Seu acesso será liberado automaticamente.
+          </p>
+          <p className="mt-2 text-slate-500 text-sm">
+            Você já pode fechar esta página.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // --- STATE ---
   const [upsellSelected, setUpsellSelected] = useState<boolean>(false);
   
@@ -30,6 +48,8 @@ const App: React.FC = () => {
     isSuccess: false,
     error: null
   });
+
+  const [pixPayment, setPixPayment] = useState<PixPaymentData | null>(null);
 
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({});
 
@@ -108,8 +128,16 @@ const App: React.FC = () => {
       const result = await processCheckout(formData, paymentMethod, upsellSelected);
       
       if (result.success) {
+        if (paymentMethod === PaymentMethod.PIX && result.paymentId) {
+          setPixPayment({
+            paymentId: result.paymentId,
+            qrCode: result.qrCode,
+            qrCodeBase64: result.qrCodeBase64,
+            ticketUrl: result.ticketUrl
+          });
+        }
+
         setPaymentState(prev => ({ ...prev, isSuccess: true }));
-        alert(`Pedido realizado com sucesso!\n\nEm um cenário real, você seria redirecionado para: ${result.redirectUrl}`);
       }
     } catch (err) {
       setPaymentState(prev => ({ ...prev, error: 'Erro ao processar pagamento.' }));
@@ -141,6 +169,7 @@ const App: React.FC = () => {
             onSubmit={handleSubmit}
             isProcessing={paymentState.isProcessing}
             errors={errors}
+            pixPayment={pixPayment}
           />
         </div>
 

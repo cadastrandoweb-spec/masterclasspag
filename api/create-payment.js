@@ -5,6 +5,12 @@ export default async function handler(req, res) {
     return;
   }
 
+  const accessToken = process.env.MP_ACCESS_TOKEN;
+  if (!accessToken) {
+    res.status(500).json({ success: false, error: 'Missing MP_ACCESS_TOKEN' });
+    return;
+  }
+
   const { user, items, paymentMethod } = req.body ?? {};
 
   if (!user?.email || !Array.isArray(items) || items.length === 0) {
@@ -12,10 +18,65 @@ export default async function handler(req, res) {
     return;
   }
 
-  res.status(200).json({
-    success: true,
-    preferenceId: 'pref_vercel_123',
-    paymentUrl: 'https://example.com/checkout',
-    received: { user, items, paymentMethod }
-  });
+  if (paymentMethod !== 'pix') {
+    res.status(400).json({ success: false, error: 'Only PIX is supported in this checkout' });
+    return;
+  }
+
+  const total = items.reduce((acc, it) => acc + Number(it?.price || 0), 0);
+  if (!Number.isFinite(total) || total <= 0) {
+    res.status(400).json({ success: false, error: 'Invalid items total' });
+    return;
+  }
+
+  const siteUrl = process.env.PUBLIC_SITE_URL;
+  const notificationUrl = siteUrl ? `${siteUrl.replace(/\/$/, '')}/api/webhooks/mercadopago` : undefined;
+
+  const payload = {
+    transaction_amount: Number(total.toFixed(2)),
+    description: items.map(i => i?.title).filter(Boolean).join(' + ').slice(0, 240) || 'Compra',
+    payment_method_id: 'pix',
+    payer: {
+      email: user.email
+    },
+    notification_url: notificationUrl,
+    metadata: {
+      customer_name: user?.name,
+      customer_email: user?.email,
+      customer_phone: user?.phone,
+      customer_document: user?.document,
+      items
+    }
+  };
+
+  try {
+    const r = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await r.json();
+
+    if (!r.ok) {
+      res.status(r.status).json({ success: false, error: 'Mercado Pago error', details: data });
+      return;
+    }
+
+    const tx = data?.point_of_interaction?.transaction_data;
+    res.status(200).json({
+      success: true,
+      paymentId: data?.id,
+      status: data?.status,
+      qrCode: tx?.qr_code,
+      qrCodeBase64: tx?.qr_code_base64,
+      ticketUrl: tx?.ticket_url,
+      received: { user, items, paymentMethod }
+    });
+  } catch {
+    res.status(500).json({ success: false, error: 'Payment creation failed' });
+  }
 }
