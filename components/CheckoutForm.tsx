@@ -44,6 +44,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     Array<{ installments: number; installmentAmount: number; totalAmount: number; message?: string }>
   >([]);
   const [cardInstallments, setCardInstallments] = useState<number>(1);
+  const [cardInstallmentsLoading, setCardInstallmentsLoading] = useState(false);
+  const [cardInstallmentsUnavailable, setCardInstallmentsUnavailable] = useState(false);
 
   const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
 
@@ -134,6 +136,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     const publicKey = import.meta.env.VITE_MP_PUBLIC_KEY;
     const MercadoPagoCtor = (window as any).MercadoPago;
     if (!publicKey || !MercadoPagoCtor) return;
+    if (!args.bin || String(args.bin).length < 6) return;
+
+    setCardInstallmentsLoading(true);
+    setCardInstallmentsUnavailable(false);
 
     try {
       const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
@@ -158,22 +164,27 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           .filter((x: any) => Number.isFinite(x.installments) && x.installments <= 12);
 
         setCardInstallmentOptions(mapped);
+        setCardInstallmentsUnavailable(mapped.length === 0);
         if (!mapped.some(m => m.installments === cardInstallments)) {
           setCardInstallments(mapped?.[0]?.installments || 1);
         }
       } else {
         setCardInstallmentOptions([]);
         setCardInstallments(1);
+        setCardInstallmentsUnavailable(true);
       }
     } catch {
       setCardInstallmentOptions([]);
       setCardInstallments(1);
+      setCardInstallmentsUnavailable(true);
+    } finally {
+      setCardInstallmentsLoading(false);
     }
   };
 
   useEffect(() => {
     if (paymentMethod !== PaymentMethod.CREDIT_CARD) return;
-    if (!cardBin || !cardPaymentMethodId) return;
+    if (!cardBin || String(cardBin).length < 6 || !cardPaymentMethodId) return;
     void refreshInstallments({
       bin: cardBin,
       paymentMethodId: cardPaymentMethodId,
@@ -216,17 +227,19 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     const onBinChange = async (e: any) => {
       const bin = e?.bin;
       setCardBin(bin || '');
-      if (!bin) {
+      if (!bin || String(bin).length < 6) {
         setCardPaymentMethodId('');
         setCardIssuerId('');
         setCardIssuers(null);
         setCardInstallmentOptions([]);
         setCardInstallments(1);
+        setCardInstallmentsUnavailable(false);
         return;
       }
       try {
         const pm = await mp.getPaymentMethods({ bin });
         const pmId = pm?.results?.[0]?.id;
+
         setCardPaymentMethodId(pmId || '');
 
         if (!pmId) {
@@ -234,6 +247,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           setCardIssuers(null);
           setCardInstallmentOptions([]);
           setCardInstallments(1);
+          setCardInstallmentsUnavailable(true);
           return;
         }
 
@@ -260,6 +274,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         setCardIssuers(null);
         setCardInstallmentOptions([]);
         setCardInstallments(1);
+        setCardInstallmentsUnavailable(true);
       }
     };
 
@@ -274,6 +289,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       setCardIssuers(null);
       setCardInstallmentOptions([]);
       setCardInstallments(1);
+      setCardInstallmentsUnavailable(false);
+      setCardInstallmentsLoading(false);
       try {
         cardNumberField.unmount();
         securityCodeField.unmount();
@@ -709,6 +726,12 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                       </div>
                     )}
                   </div>
+                )}
+                {cardInstallmentsLoading && (
+                  <div className="text-xs text-slate-500">Carregando parcelamento...</div>
+                )}
+                {!cardInstallmentsLoading && cardInstallmentsUnavailable && (
+                  <div className="text-xs text-slate-500">Parcelamento indisponível para este cartão.</div>
                 )}
                 {cardError && (
                   <div className="text-xs text-red-500">{cardError}</div>
