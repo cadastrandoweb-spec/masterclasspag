@@ -134,6 +134,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   }) => {
     const publicKey = import.meta.env.VITE_MP_PUBLIC_KEY;
     const MercadoPagoCtor = (window as any).MercadoPago;
+
     if (!publicKey || !MercadoPagoCtor) {
       setCardInstallmentsUnavailable(true);
       setCardInstallmentsDebug('DEBUG[v2-installments]: SDK/PK ausente');
@@ -145,14 +146,23 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       return;
     }
 
+    const normalizedAmountNumber = Number(args.amount);
+    if (!Number.isFinite(normalizedAmountNumber) || normalizedAmountNumber <= 0) {
+      setCardInstallmentsUnavailable(true);
+      setCardInstallmentsDebug(`DEBUG[v2-installments]: amount inválido (${String(args.amount)})`);
+      return;
+    }
+
+    const normalizedAmount = normalizedAmountNumber.toFixed(2);
+
     setCardInstallmentsLoading(true);
     setCardInstallmentsUnavailable(false);
-    setCardInstallmentsDebug(`DEBUG[v2-installments]: bin=${String(args.bin)} amount=${Number(args.amount.toFixed(2))}`);
+    setCardInstallmentsDebug(`DEBUG[v2-installments]: bin=${String(args.bin)} amount=${normalizedAmount}`);
 
     try {
       const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
       const instResp = await mp.getInstallments({
-        amount: Number(args.amount.toFixed(2)),
+        amount: normalizedAmount,
         bin: args.bin,
         locale: 'pt-BR'
       });
