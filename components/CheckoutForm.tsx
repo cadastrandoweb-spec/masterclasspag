@@ -547,7 +547,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                   <label className="block text-sm font-medium text-slate-600 mb-1">
                     Número do cartão <span className="text-brand-600">*</span>
                   </label>
-                  <div id="mp-card-number" className="bg-white rounded-md border border-slate-200 p-3" />
+                  <div id="mp-card-number" className="bg-white rounded-md border border-slate-200 px-3 h-11 flex items-center overflow-hidden" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -555,19 +555,19 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                     <label className="block text-sm font-medium text-slate-600 mb-1">
                       Validade (MM) <span className="text-brand-600">*</span>
                     </label>
-                    <div id="mp-expiration-month" className="bg-white rounded-md border border-slate-200 p-3" />
+                    <div id="mp-expiration-month" className="bg-white rounded-md border border-slate-200 px-3 h-11 flex items-center overflow-hidden" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-600 mb-1">
                       Validade (AA) <span className="text-brand-600">*</span>
                     </label>
-                    <div id="mp-expiration-year" className="bg-white rounded-md border border-slate-200 p-3" />
+                    <div id="mp-expiration-year" className="bg-white rounded-md border border-slate-200 px-3 h-11 flex items-center overflow-hidden" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-600 mb-1">
                       CVV <span className="text-brand-600">*</span>
                     </label>
-                    <div id="mp-security-code" className="bg-white rounded-md border border-slate-200 p-3" />
+                    <div id="mp-security-code" className="bg-white rounded-md border border-slate-200 px-3 h-11 flex items-center overflow-hidden" />
                   </div>
                 </div>
 
