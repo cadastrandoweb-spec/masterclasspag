@@ -193,7 +193,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       const safeString = () => {
         try {
           if (typeof e === 'string') return e;
-          if (e && typeof e.toString === 'function' && e.toString !== Object.prototype.toString) return e.toString();
         } catch {
           // ignore
         }
@@ -204,25 +203,50 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         }
       };
 
+      const ownKeys = (() => {
+        try {
+          return Reflect.ownKeys(e ?? {}).map(k => String(k));
+        } catch {
+          return [];
+        }
+      })();
+
+      const ownProps: Record<string, any> = {};
+      for (const k of ownKeys) {
+        try {
+          // @ts-ignore
+          ownProps[k] = (e as any)[k];
+        } catch {
+          ownProps[k] = '[unreadable]';
+        }
+      }
+
       const details: any = {
-        message: e?.message,
-        name: e?.name,
-        status: e?.status,
-        error: e?.error,
-        cause: e?.cause,
-        data: e?.data,
-        asString: safeString()
+        name: (e as any)?.name,
+        message: (e as any)?.message,
+        status: (e as any)?.status,
+        error: (e as any)?.error,
+        cause: (e as any)?.cause,
+        data: (e as any)?.data,
+        stack: (e as any)?.stack,
+        asString: safeString(),
+        ownKeys,
+        ownProps
+      };
+
+      const replacer = (_key: string, value: any) => {
+        if (typeof value === 'function') return '[function]';
+        if (value instanceof Error) {
+          return { name: value.name, message: value.message, stack: value.stack };
+        }
+        return value;
       };
 
       let rendered = '';
       try {
-        rendered = JSON.stringify(details);
+        rendered = JSON.stringify(details, replacer);
       } catch {
-        try {
-          rendered = JSON.stringify(e, Object.getOwnPropertyNames(e));
-        } catch {
-          rendered = safeString();
-        }
+        rendered = safeString();
       }
 
       setCardInstallmentsDebug(`DEBUG[v2-installments]: erro ${rendered}`);
