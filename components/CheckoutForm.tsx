@@ -50,8 +50,19 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
   const mpRef = useRef<any>(null);
   const mpFieldsRef = useRef<any>(null);
+  const pixPurchaseTrackedRef = useRef(false);
 
   const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+
+  const trackFbEvent = (eventName: string, params?: Record<string, any>) => {
+    const fbq = (window as any)?.fbq;
+    if (typeof fbq !== 'function') return;
+    try {
+      fbq('track', eventName, params);
+    } catch {
+      // ignore
+    }
+  };
 
   const formatBRL = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
@@ -107,6 +118,13 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       const status = data?.status;
       setPixStatus(status || null);
       if (status === 'approved') {
+        if (!pixPurchaseTrackedRef.current) {
+          pixPurchaseTrackedRef.current = true;
+          trackFbEvent('Purchase', {
+            value: Number(totalAmount.toFixed(2)),
+            currency: 'BRL'
+          });
+        }
         window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
       }
     } catch {

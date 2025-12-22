@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { OrderSummary } from './components/OrderSummary';
 import { CheckoutForm } from './components/CheckoutForm';
 import { CardPaymentData, PaymentMethod, OrderForm, PaymentState, PixPaymentData } from './types';
 import { processCheckout } from './services/mockService';
+import { MAIN_PRODUCT, UPSELL_PRODUCT } from './constants';
 
 const App: React.FC = () => {
   // --- STATE ---
   const [upsellSelected, setUpsellSelected] = useState<boolean>(false);
+  const fbInitiateTrackedRef = useRef(false);
   
   const [formData, setFormData] = useState<OrderForm>({
     name: '',
@@ -34,6 +36,28 @@ const App: React.FC = () => {
   const [pixPayment, setPixPayment] = useState<PixPaymentData | null>(null);
 
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({});
+
+  const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+
+  const trackFbEvent = (eventName: string, params?: Record<string, any>) => {
+    const fbq = (window as any)?.fbq;
+    if (typeof fbq !== 'function') return;
+    try {
+      fbq('track', eventName, params);
+    } catch {
+      // ignore
+    }
+  };
+
+  useEffect(() => {
+    if (fbInitiateTrackedRef.current) return;
+    fbInitiateTrackedRef.current = true;
+    trackFbEvent('InitiateCheckout', {
+      value: Number(totalAmount.toFixed(2)),
+      currency: 'BRL'
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // --- LOGIC ---
   const validate = (): boolean => {
@@ -121,6 +145,10 @@ const App: React.FC = () => {
         }
 
         if (paymentMethod === PaymentMethod.CREDIT_CARD && result.status === 'approved') {
+          trackFbEvent('Purchase', {
+            value: Number(totalAmount.toFixed(2)),
+            currency: 'BRL'
+          });
           window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
           return;
         }
