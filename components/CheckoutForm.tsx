@@ -433,8 +433,44 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         installments: cardInstallments,
         paymentMethodId: cardPaymentMethodId
       });
-    } catch {
-      setCardError('Erro ao processar cartão.');
+    } catch (e: any) {
+      const ownKeys = (() => {
+        try {
+          return Reflect.ownKeys(e ?? {}).map(k => String(k));
+        } catch {
+          return [];
+        }
+      })();
+      const ownProps: Record<string, any> = {};
+      for (const k of ownKeys) {
+        try {
+          // @ts-ignore
+          ownProps[k] = (e as any)[k];
+        } catch {
+          ownProps[k] = '[unreadable]';
+        }
+      }
+      const details: any = {
+        name: (e as any)?.name,
+        message: (e as any)?.message,
+        status: (e as any)?.status,
+        error: (e as any)?.error,
+        cause: (e as any)?.cause,
+        data: (e as any)?.data,
+        ownKeys,
+        ownProps
+      };
+      let rendered = '';
+      try {
+        rendered = JSON.stringify(details);
+      } catch {
+        try {
+          rendered = JSON.stringify(e, Object.getOwnPropertyNames(e));
+        } catch {
+          rendered = 'unknown_error';
+        }
+      }
+      setCardError(`Erro ao processar cartão: ${rendered}`);
     } finally {
       setCardTokenizing(false);
     }
