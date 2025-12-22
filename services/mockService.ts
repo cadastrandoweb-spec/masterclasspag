@@ -11,7 +11,7 @@ export const processCheckout = async (
     installments?: number; 
     issuerId?: string 
   })
-): Promise<{ success: boolean; message: string; paymentId?: string; status?: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string }> => {
+): Promise<{ success: boolean; message: string; paymentId?: string; status?: string; statusDetail?: string; qrCode?: string; qrCodeBase64?: string; ticketUrl?: string }> => {
 
   const items = [
     { id: MAIN_PRODUCT.id, title: MAIN_PRODUCT.name, price: MAIN_PRODUCT.price },
@@ -51,6 +51,7 @@ export const processCheckout = async (
     message: data?.success ? 'Pagamento iniciado com sucesso!' : 'Falha ao iniciar pagamento.',
     paymentId: data?.paymentId,
     status: data?.status,
+    statusDetail: data?.statusDetail,
     qrCode: data?.qrCode,
     qrCodeBase64: data?.qrCodeBase64,
     ticketUrl: data?.ticketUrl

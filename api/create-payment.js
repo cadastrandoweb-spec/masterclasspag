@@ -121,6 +121,7 @@ export default async function handler(req, res) {
       success: true,
       paymentId: data?.id,
       status: data?.status,
+      statusDetail: data?.status_detail,
       qrCode: tx?.qr_code,
       qrCodeBase64: tx?.qr_code_base64,
       ticketUrl: tx?.ticket_url,

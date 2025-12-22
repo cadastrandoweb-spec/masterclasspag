@@ -11,7 +11,7 @@ interface CheckoutFormProps {
   setPaymentMethod: (method: PaymentMethod) => void;
   upsellSelected: boolean;
   setUpsellSelected: (selected: boolean) => void;
-  onSubmit: (cardPaymentData?: (CardPaymentData & { paymentMethodId?: string })) => void;
+  onSubmit: (cardPaymentData?: (CardPaymentData & { paymentMethodId?: string })) => Promise<void>;
   isProcessing: boolean;
   errors: Partial<Record<keyof OrderForm, string>>;
   pixPayment: PixPaymentData | null;
@@ -438,7 +438,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         return;
       }
 
-      onSubmit({
+      await onSubmit({
         token,
         bin: cardBin,
         issuerId: cardIssuerId || undefined,
@@ -875,7 +875,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                   disabled={isProcessing || cardTokenizing}
                   className="px-3 py-2 rounded-md bg-brand-500 text-white text-xs font-semibold hover:bg-brand-600 transition-colors disabled:opacity-60"
                 >
-                  {cardTokenizing ? 'Processando cartão...' : 'Pagar com cartão'}
+                  {isProcessing || cardTokenizing ? 'Processando...' : 'Pagar com cartão'}
                 </button>
               </div>
             </div>
@@ -923,7 +923,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         )}
         
         <button
-          onClick={paymentMethod === PaymentMethod.CREDIT_CARD ? submitCreditCard : () => onSubmit()}
+          onClick={paymentMethod === PaymentMethod.CREDIT_CARD ? submitCreditCard : () => {
+            void onSubmit();
+          }}
           disabled={isProcessing}
           className={`
             w-full py-4 rounded-lg shadow-lg text-white font-bold text-lg uppercase tracking-wide

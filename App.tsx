@@ -125,6 +125,14 @@ const App: React.FC = () => {
           return;
         }
 
+        if (paymentMethod === PaymentMethod.CREDIT_CARD) {
+          const status = result.status ? String(result.status) : 'unknown';
+          const statusDetail = result.statusDetail ? String(result.statusDetail) : '';
+          const msg = statusDetail ? `Status do pagamento: ${status} - ${statusDetail}` : `Status do pagamento: ${status}`;
+          setPaymentState(prev => ({ ...prev, isSuccess: false, error: msg }));
+          return;
+        }
+
         setPaymentState(prev => ({ ...prev, isSuccess: true }));
       }
     } catch (err) {
