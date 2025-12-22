@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { CreditCard, QrCode, CheckSquare, Square, AlertCircle, Lock, MapPin } from 'lucide-react';
 import { CardPaymentData, PaymentMethod, OrderForm, PixPaymentData } from '../types';
 import { Input } from './ui/Input';
@@ -47,6 +47,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const [cardInstallmentsLoading, setCardInstallmentsLoading] = useState(false);
   const [cardInstallmentsUnavailable, setCardInstallmentsUnavailable] = useState(false);
   const [cardInstallmentsDebug, setCardInstallmentsDebug] = useState<string>('');
+
+  const mpRef = useRef<any>(null);
+  const mpFieldsRef = useRef<any>(null);
 
   const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
 
@@ -293,7 +296,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     setCardError(null);
 
     const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
+    mpRef.current = mp;
     const fields = mp.fields;
+    mpFieldsRef.current = fields;
 
     const cardNumberField = fields.create('cardNumber', { placeholder: 'Número do cartão', primary: true });
     const securityCodeField = fields.create('securityCode', { placeholder: 'CVV' });
@@ -361,6 +366,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
     return () => {
       setMpReady(false);
+      mpRef.current = null;
+      mpFieldsRef.current = null;
       setCardBin('');
       setCardPaymentMethodId('');
       setCardIssuerId('');
@@ -413,8 +420,13 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     setCardError(null);
     setCardTokenizing(true);
     try {
-      const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
-      const tokenResp = await mp.fields.createCardToken({
+      const fields = mpFieldsRef.current;
+      if (!fields) {
+        setCardError('Carregando campos do cartão...');
+        return;
+      }
+
+      const tokenResp = await fields.createCardToken({
         cardholderName: cardholderName.trim(),
         identificationType: 'CPF',
         identificationNumber: cleanDoc
