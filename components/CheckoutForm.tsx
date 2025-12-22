@@ -295,7 +295,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     const mp = new MercadoPagoCtor(publicKey, { locale: 'pt-BR' });
     const fields = mp.fields;
 
-    const cardNumberField = fields.create('cardNumber', { placeholder: 'Número do cartão' });
+    const cardNumberField = fields.create('cardNumber', { placeholder: 'Número do cartão', primary: true });
     const securityCodeField = fields.create('securityCode', { placeholder: 'CVV' });
     const expirationMonthField = fields.create('expirationMonth', { placeholder: 'MM' });
     const expirationYearField = fields.create('expirationYear', { placeholder: 'AA' });
