@@ -145,7 +145,8 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex justify-center">
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-12 gap-8">
+      <div className="w-full max-w-6xl">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         
         {/* LEFT COLUMN (Summary) - Takes 4 cols on desktop */}
         <div className="md:col-span-4 order-1 md:order-1">
@@ -175,6 +176,18 @@ const App: React.FC = () => {
           )}
         </div>
 
+        </div>
+
+        <div className="mt-10 flex justify-center">
+          <a
+            href="https://transparencyreport.google.com/safe-browsing/search?url=xandr.com.br&hl=pt_BR"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex"
+          >
+            <img src="/siteseguro.png" alt="Site seguro" className="h-12 w-auto" />
+          </a>
+        </div>
       </div>
     </div>
   );
