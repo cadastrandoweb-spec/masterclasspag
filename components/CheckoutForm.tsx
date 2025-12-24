@@ -656,8 +656,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 placeholder="Cidade"
                 error={!!errors.city}
                 errorMessage={errors.city}
-                readOnly 
-                className="bg-slate-50 opacity-90"
               />
               <Input 
                 label="Estado" 
@@ -668,8 +666,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 placeholder="UF"
                 error={!!errors.state}
                 errorMessage={errors.state}
-                readOnly
-                className="bg-slate-50 opacity-90"
               />
            </div>
         </div>

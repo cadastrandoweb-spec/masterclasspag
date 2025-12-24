@@ -87,7 +87,8 @@ const App: React.FC = () => {
       isValid = false;
     }
 
-    if (!formData.zipCode || formData.zipCode.length < 8) {
+    const cleanZip = formData.zipCode.replace(/\D/g, '');
+    if (cleanZip.length !== 8) {
       newErrors.zipCode = 'CEP inválido.';
       isValid = false;
     }
