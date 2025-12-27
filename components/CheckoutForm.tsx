@@ -124,6 +124,17 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             value: Number(totalAmount.toFixed(2)),
             currency: 'BRL'
           });
+          try {
+            const fbq = (window as any)?.fbq;
+            if (typeof fbq === 'function' && pixPayment?.paymentId) {
+              fbq('track', 'Purchase', {
+                value: Number(totalAmount.toFixed(2)),
+                currency: 'BRL'
+              }, { eventID: String(pixPayment.paymentId) });
+            }
+          } catch {
+            // ignore
+          }
         }
         window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
       }

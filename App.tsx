@@ -150,6 +150,17 @@ const App: React.FC = () => {
             value: Number(totalAmount.toFixed(2)),
             currency: 'BRL'
           });
+          try {
+            const fbq = (window as any)?.fbq;
+            if (typeof fbq === 'function' && result.paymentId) {
+              fbq('track', 'Purchase', {
+                value: Number(totalAmount.toFixed(2)),
+                currency: 'BRL'
+              }, { eventID: String(result.paymentId) });
+            }
+          } catch {
+            // ignore
+          }
           window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
           return;
         }
