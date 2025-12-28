@@ -120,23 +120,25 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       if (status === 'approved') {
         if (!pixPurchaseTrackedRef.current) {
           pixPurchaseTrackedRef.current = true;
-          trackFbEvent('Purchase', {
-            value: Number(totalAmount.toFixed(2)),
-            currency: 'BRL'
-          });
           try {
             const fbq = (window as any)?.fbq;
-            if (typeof fbq === 'function' && pixPayment?.paymentId) {
-              fbq('track', 'Purchase', {
-                value: Number(totalAmount.toFixed(2)),
-                currency: 'BRL'
-              }, { eventID: String(pixPayment.paymentId) });
+            const params = {
+              value: Number(totalAmount.toFixed(2)),
+              currency: 'BRL'
+            };
+            const eventId = pixPayment?.paymentId ? String(pixPayment.paymentId) : undefined;
+            if (typeof fbq === 'function') {
+              fbq('track', 'Purchase', params, eventId ? { eventID: eventId } : undefined);
+            } else {
+              trackFbEvent('Purchase', params);
             }
           } catch {
             // ignore
           }
         }
-        window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
+        window.setTimeout(() => {
+          window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
+        }, 800);
       }
     } catch {
       // ignore
