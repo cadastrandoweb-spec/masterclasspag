@@ -100,6 +100,30 @@ function getClientIp(req) {
   return req.socket?.remoteAddress;
 }
 
+async function markMetaPurchaseSent({ paymentId, accessToken }) {
+  if (!paymentId || !accessToken) return { skipped: true };
+
+  const url = `https://api.mercadopago.com/v1/payments/${encodeURIComponent(String(paymentId))}`;
+  const payload = {
+    metadata: {
+      meta_purchase_sent: true,
+      meta_purchase_sent_at: new Date().toISOString()
+    }
+  };
+
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await r.json().catch(() => null);
+  return { ok: r.ok, status: r.status, data };
+}
+
 async function callMemboxWebhook({ customer, productName, orderBumpId }) {
   const url = process.env.MEMBOX_WEBHOOK_URL;
   const credential = process.env.MEMBOX_WEBHOOK_CREDENTIAL;
@@ -191,11 +215,14 @@ export default async function handler(req, res) {
     };
 
     try {
+      const alreadySent = payment?.metadata?.meta_purchase_sent === true || payment?.metadata?.meta_purchase_sent === 'true';
       const mpItems = payment?.metadata?.items;
       const items = Array.isArray(mpItems) ? mpItems : undefined;
       const value = Number(payment?.transaction_amount ?? payment?.metadata?.transaction_amount);
 
-      if (Number.isFinite(value) && value > 0) {
+      if (alreadySent) {
+        console.log('Meta Purchase Event (PIX) skipped: already sent for paymentId', payment?.id);
+      } else if (Number.isFinite(value) && value > 0) {
         const result = await sendMetaPurchaseEvent({
           paymentId: payment?.id,
           user: customer,
@@ -208,6 +235,15 @@ export default async function handler(req, res) {
           clientIpAddress: getClientIp(req)
         });
         console.log('Meta Purchase Event (PIX) sent:', result);
+
+        if (result?.ok) {
+          try {
+            const markResult = await markMetaPurchaseSent({ paymentId: payment?.id, accessToken });
+            console.log('Meta Purchase Event (PIX) marked on Mercado Pago:', markResult);
+          } catch (e) {
+            console.error('Error marking Meta Purchase Event (PIX) on Mercado Pago:', e);
+          }
+        }
       }
     } catch (err) {
       console.error('Error sending Meta Purchase Event (PIX):', err);
