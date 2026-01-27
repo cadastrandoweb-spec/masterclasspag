@@ -36,7 +36,9 @@ async function sendMetaPurchaseEvent({
       return doc ? sha256(doc) : undefined;
     })(),
     fbp: meta?.fbp ? String(meta.fbp) : undefined,
-    fbc: meta?.fbc ? String(meta.fbc) : undefined
+    fbc: meta?.fbc ? String(meta.fbc) : undefined,
+    client_user_agent: clientUserAgent ? String(clientUserAgent) : undefined,
+    client_ip_address: clientIpAddress ? String(clientIpAddress) : undefined
   };
 
   Object.keys(userData).forEach((k) => {
@@ -51,8 +53,6 @@ async function sendMetaPurchaseEvent({
         event_id: paymentId ? String(paymentId) : undefined,
         action_source: 'website',
         event_source_url: eventSourceUrl,
-        client_user_agent: clientUserAgent ? String(clientUserAgent) : undefined,
-        client_ip_address: clientIpAddress ? String(clientIpAddress) : undefined,
         user_data: userData,
         custom_data: {
           currency,
@@ -196,7 +196,7 @@ export default async function handler(req, res) {
       const value = Number(payment?.transaction_amount ?? payment?.metadata?.transaction_amount);
 
       if (Number.isFinite(value) && value > 0) {
-        await sendMetaPurchaseEvent({
+        const result = await sendMetaPurchaseEvent({
           paymentId: payment?.id,
           user: customer,
           items,
@@ -207,9 +207,10 @@ export default async function handler(req, res) {
           clientUserAgent: meta?.userAgent,
           clientIpAddress: getClientIp(req)
         });
+        console.log('Meta Purchase Event (PIX) sent:', result);
       }
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('Error sending Meta Purchase Event (PIX):', err);
     }
 
     // Campos obrigatórios no payload do Membox

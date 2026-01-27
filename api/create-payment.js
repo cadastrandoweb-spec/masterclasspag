@@ -36,7 +36,9 @@ async function sendMetaPurchaseEvent({
       return doc ? sha256(doc) : undefined;
     })(),
     fbp: meta?.fbp ? String(meta.fbp) : undefined,
-    fbc: meta?.fbc ? String(meta.fbc) : undefined
+    fbc: meta?.fbc ? String(meta.fbc) : undefined,
+    client_user_agent: clientUserAgent ? String(clientUserAgent) : undefined,
+    client_ip_address: clientIpAddress ? String(clientIpAddress) : undefined
   };
 
   Object.keys(userData).forEach((k) => {
@@ -51,8 +53,6 @@ async function sendMetaPurchaseEvent({
         event_id: paymentId ? String(paymentId) : undefined,
         action_source: 'website',
         event_source_url: eventSourceUrl,
-        client_user_agent: clientUserAgent ? String(clientUserAgent) : undefined,
-        client_ip_address: clientIpAddress ? String(clientIpAddress) : undefined,
         user_data: userData,
         custom_data: {
           currency,
@@ -226,7 +226,7 @@ export default async function handler(req, res) {
 
     if (paymentMethod === 'credit_card' && data?.status === 'approved') {
       try {
-        await sendMetaPurchaseEvent({
+        const result = await sendMetaPurchaseEvent({
           paymentId: data?.id,
           user,
           items,
@@ -237,8 +237,9 @@ export default async function handler(req, res) {
           clientUserAgent: meta?.userAgent || req.headers['user-agent'],
           clientIpAddress: getClientIp(req)
         });
-      } catch {
-        // ignore
+        console.log('Meta Purchase Event (Credit Card) sent:', result);
+      } catch (err) {
+        console.error('Error sending Meta Purchase Event (Credit Card):', err);
       }
     }
 
