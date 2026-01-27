@@ -138,6 +138,37 @@ export default async function handler(req, res) {
     return;
   }
 
+  const splitName = (fullName) => {
+    const normalized = String(fullName || '').trim().replace(/\s+/g, ' ');
+    if (!normalized) return { firstName: undefined, lastName: undefined };
+    const parts = normalized.split(' ');
+    const firstName = parts[0];
+    const lastName = parts.slice(1).join(' ') || undefined;
+    return { firstName, lastName };
+  };
+
+  const { firstName, lastName } = splitName(user?.name);
+  const documentDigits = String(user?.document || '').replace(/\D/g, '');
+
+  const normalizedItems = items
+    .map((it, idx) => {
+      const quantity = Number(it?.quantity || 1);
+      const unitPrice = Number(it?.unit_price ?? it?.price ?? 0);
+      return {
+        id: it?.id != null ? String(it.id) : String(idx + 1),
+        title: String(it?.title ?? it?.name ?? 'Item').slice(0, 256),
+        description: it?.description != null ? String(it.description).slice(0, 256) : undefined,
+        category_id: it?.category_id != null ? String(it.category_id) : undefined,
+        quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
+        unit_price: Number.isFinite(unitPrice) ? Number(unitPrice.toFixed(2)) : 0
+      };
+    })
+    .filter((it) => Number(it.unit_price) > 0);
+
+  const externalReference = String(
+    meta?.externalReference || meta?.orderId || meta?.order_id || crypto.randomUUID()
+  );
+
   const siteUrl = process.env.PUBLIC_SITE_URL;
   const notificationUrl = siteUrl ? `${siteUrl.replace(/\/$/, '')}/api/webhooks/mercadopago` : undefined;
   const eventSourceUrl = meta?.url ? String(meta.url) : siteUrl;
@@ -146,7 +177,39 @@ export default async function handler(req, res) {
     transaction_amount: Number(total.toFixed(2)),
     description: items.map(i => i?.title).filter(Boolean).join(' + ').slice(0, 240) || 'Compra',
     payer: {
-      email: user.email
+      email: user.email,
+      first_name: firstName,
+      last_name: lastName
+    },
+    external_reference: externalReference,
+    additional_info: {
+      items: normalizedItems,
+      payer: {
+        first_name: firstName,
+        last_name: lastName,
+        phone: user?.phone
+          ? {
+              area_code: String(user.phone).replace(/\D/g, '').slice(0, 2) || undefined,
+              number: String(user.phone).replace(/\D/g, '').slice(2) || undefined
+            }
+          : undefined,
+        identification: documentDigits
+          ? {
+              type: documentDigits.length === 14 ? 'CNPJ' : 'CPF',
+              number: documentDigits
+            }
+          : undefined,
+        address: user?.zipCode
+          ? {
+              zip_code: String(user.zipCode).replace(/\D/g, ''),
+              street_name: user?.street ? String(user.street) : undefined,
+              street_number: user?.number ? Number(String(user.number).replace(/\D/g, '')) : undefined,
+              neighborhood: user?.neighborhood ? String(user.neighborhood) : undefined,
+              city: user?.city ? String(user.city) : undefined,
+              federal_unit: user?.state ? String(user.state) : undefined
+            }
+          : undefined
+      }
     },
     notification_url: notificationUrl,
     metadata: {
@@ -154,12 +217,13 @@ export default async function handler(req, res) {
       customer_email: user?.email,
       customer_phone: user?.phone,
       customer_document: user?.document,
+      external_reference: externalReference,
       meta_fbp: meta?.fbp ? String(meta.fbp) : undefined,
       meta_fbc: meta?.fbc ? String(meta.fbc) : undefined,
       meta_fbclid: meta?.fbclid ? String(meta.fbclid) : undefined,
       meta_url: meta?.url ? String(meta.url) : undefined,
       meta_ua: meta?.userAgent ? String(meta.userAgent) : undefined,
-      items
+      items: normalizedItems
     }
   };
 
@@ -178,8 +242,8 @@ export default async function handler(req, res) {
           payer: {
             ...basePayload.payer,
             identification: {
-              type: 'CPF',
-              number: String(user?.document || '')
+              type: documentDigits.length === 14 ? 'CNPJ' : 'CPF',
+              number: documentDigits
             }
           }
         };
@@ -246,6 +310,7 @@ export default async function handler(req, res) {
     res.status(200).json({
       success: true,
       paymentId: data?.id,
+      externalReference,
       status: data?.status,
       statusDetail: data?.status_detail,
       qrCode: tx?.qr_code,
