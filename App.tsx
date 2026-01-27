@@ -130,6 +130,22 @@ const App: React.FC = () => {
       return;
     }
 
+    try {
+      const fbq = (window as any)?.fbq;
+      if (typeof fbq === 'function') {
+        const em = String(formData.email || '').trim().toLowerCase();
+        const ph = String(formData.phone || '').replace(/\D/g, '');
+        const userData: Record<string, any> = {};
+        if (em) userData.em = em;
+        if (ph) userData.ph = ph;
+        if (Object.keys(userData).length > 0) {
+          fbq('set', 'userData', userData);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     setPaymentState(prev => ({ ...prev, isProcessing: true }));
 
     try {
@@ -154,7 +170,7 @@ const App: React.FC = () => {
             };
             const eventId = result.paymentId ? String(result.paymentId) : undefined;
             if (typeof fbq === 'function') {
-              fbq('track', 'Purchase', params, eventId ? { eventID: eventId } : undefined);
+              fbq('trackSingle', 'Purchase', params, eventId ? { eventID: eventId } : undefined);
             } else {
               trackFbEvent('Purchase', params);
             }
