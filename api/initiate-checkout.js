@@ -60,10 +60,6 @@ async function sendMetaInitiateCheckoutEvent({
       const p = digitsOnly(user?.phone);
       return p ? sha256(p) : undefined;
     })(),
-    external_id: (() => {
-      const doc = digitsOnly(user?.document);
-      return doc ? sha256(doc) : undefined;
-    })(),
     fbp: meta?.fbp ? String(meta.fbp) : undefined,
     fbc: meta?.fbc ? String(meta.fbc) : undefined,
     client_user_agent: clientUserAgent ? String(clientUserAgent) : undefined,

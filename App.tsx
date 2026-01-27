@@ -188,8 +188,7 @@ const App: React.FC = () => {
             eventSourceUrl: window.location.href,
             user: {
               email: formData.email,
-              phone: formData.phone,
-              document: formData.document
+              phone: formData.phone
             }
           })
         });
