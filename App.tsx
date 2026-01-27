@@ -9,7 +9,9 @@ const App: React.FC = () => {
   // --- STATE ---
   const [upsellSelected, setUpsellSelected] = useState<boolean>(false);
   const fbInitiateTrackedRef = useRef(false);
-  
+  const initiateCheckoutSentRef = useRef(false);
+  const initiateCheckoutEventIdRef = useRef<string | null>(null);
+
   const [formData, setFormData] = useState<OrderForm>({
     name: '',
     email: '',
@@ -25,7 +27,7 @@ const App: React.FC = () => {
   });
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(PaymentMethod.PIX);
-  
+
   const [paymentState, setPaymentState] = useState<PaymentState>({
     method: PaymentMethod.PIX,
     isProcessing: false,
@@ -50,12 +52,8 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    if (fbInitiateTrackedRef.current) return;
+    // keep ref for backward compatibility; InitiateCheckout is now fired on submit
     fbInitiateTrackedRef.current = true;
-    trackFbEvent('InitiateCheckout', {
-      value: Number(totalAmount.toFixed(2)),
-      currency: 'BRL'
-    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -146,11 +144,65 @@ const App: React.FC = () => {
       // ignore
     }
 
+    if (!initiateCheckoutSentRef.current) {
+      initiateCheckoutSentRef.current = true;
+
+      const eventId = (() => {
+        if (initiateCheckoutEventIdRef.current) return initiateCheckoutEventIdRef.current;
+        const stored = window.sessionStorage.getItem('meta_initiate_checkout_event_id');
+        if (stored) {
+          initiateCheckoutEventIdRef.current = stored;
+          return stored;
+        }
+        const generated =
+          (typeof crypto !== 'undefined' && typeof (crypto as any).randomUUID === 'function'
+            ? (crypto as any).randomUUID()
+            : `ic-${Date.now()}-${Math.random().toString(16).slice(2)}`);
+        initiateCheckoutEventIdRef.current = generated;
+        window.sessionStorage.setItem('meta_initiate_checkout_event_id', generated);
+        return generated;
+      })();
+
+      const params = {
+        value: Number(totalAmount.toFixed(2)),
+        currency: 'BRL'
+      };
+
+      try {
+        const fbq = (window as any)?.fbq;
+        if (typeof fbq === 'function') {
+          fbq('track', 'InitiateCheckout', params, { eventID: eventId });
+        }
+      } catch {
+        // ignore
+      }
+
+      try {
+        await fetch('/api/initiate-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            eventId,
+            value: params.value,
+            currency: params.currency,
+            eventSourceUrl: window.location.href,
+            user: {
+              email: formData.email,
+              phone: formData.phone,
+              document: formData.document
+            }
+          })
+        });
+      } catch {
+        // ignore
+      }
+    }
+
     setPaymentState(prev => ({ ...prev, isProcessing: true }));
 
     try {
       const result = await processCheckout(formData, paymentMethod, upsellSelected, cardPaymentData);
-      
+
       if (result.success) {
         if (paymentMethod === PaymentMethod.PIX && result.paymentId) {
           setPixPayment({
