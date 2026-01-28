@@ -11,6 +11,8 @@ const App: React.FC = () => {
   const fbInitiateTrackedRef = useRef(false);
   const initiateCheckoutSentRef = useRef(false);
   const initiateCheckoutEventIdRef = useRef<string | null>(null);
+  const gaBeginCheckoutSentRef = useRef(false);
+  const gaPurchaseSentRef = useRef(false);
 
   const [formData, setFormData] = useState<OrderForm>({
     name: '',
@@ -46,6 +48,16 @@ const App: React.FC = () => {
     if (typeof fbq !== 'function') return;
     try {
       fbq('track', eventName, params);
+    } catch {
+      // ignore
+    }
+  };
+
+  const trackGaEvent = (eventName: string, params?: Record<string, any>) => {
+    const gtag = (window as any)?.gtag;
+    if (typeof gtag !== 'function') return;
+    try {
+      gtag('event', eventName, params);
     } catch {
       // ignore
     }
@@ -126,6 +138,31 @@ const App: React.FC = () => {
       // Scroll to top or show toast
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
+    }
+
+    if (!gaBeginCheckoutSentRef.current) {
+      gaBeginCheckoutSentRef.current = true;
+      const items = [
+        {
+          item_id: MAIN_PRODUCT.id,
+          item_name: MAIN_PRODUCT.name,
+          price: Number(MAIN_PRODUCT.price.toFixed(2)),
+          quantity: 1,
+        },
+        ...(upsellSelected
+          ? [{
+              item_id: UPSELL_PRODUCT.id,
+              item_name: UPSELL_PRODUCT.name,
+              price: Number(UPSELL_PRODUCT.price.toFixed(2)),
+              quantity: 1,
+            }]
+          : []),
+      ];
+      trackGaEvent('begin_checkout', {
+        currency: 'BRL',
+        value: Number(totalAmount.toFixed(2)),
+        items,
+      });
     }
 
     try {
@@ -229,6 +266,34 @@ const App: React.FC = () => {
           } catch {
             // ignore
           }
+
+          if (!gaPurchaseSentRef.current) {
+            gaPurchaseSentRef.current = true;
+            const transactionId = result.paymentId ? String(result.paymentId) : `cc-${Date.now()}`;
+            const items = [
+              {
+                item_id: MAIN_PRODUCT.id,
+                item_name: MAIN_PRODUCT.name,
+                price: Number(MAIN_PRODUCT.price.toFixed(2)),
+                quantity: 1,
+              },
+              ...(upsellSelected
+                ? [{
+                    item_id: UPSELL_PRODUCT.id,
+                    item_name: UPSELL_PRODUCT.name,
+                    price: Number(UPSELL_PRODUCT.price.toFixed(2)),
+                    quantity: 1,
+                  }]
+                : []),
+            ];
+            trackGaEvent('purchase', {
+              transaction_id: transactionId,
+              currency: 'BRL',
+              value: Number(totalAmount.toFixed(2)),
+              items,
+            });
+          }
+
           window.setTimeout(() => {
             window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
           }, 800);

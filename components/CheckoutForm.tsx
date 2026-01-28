@@ -64,6 +64,16 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     }
   };
 
+  const trackGaEvent = (eventName: string, params?: Record<string, any>) => {
+    const gtag = (window as any)?.gtag;
+    if (typeof gtag !== 'function') return;
+    try {
+      gtag('event', eventName, params);
+    } catch {
+      // ignore
+    }
+  };
+
   const formatBRL = (v: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
 
@@ -122,6 +132,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           pixPurchaseTrackedRef.current = true;
           try {
             const fbq = (window as any)?.fbq;
+
             const params = {
               value: Number(totalAmount.toFixed(2)),
               currency: 'BRL'
@@ -132,6 +143,34 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             } else {
               trackFbEvent('Purchase', params);
             }
+          } catch {
+            // ignore
+          }
+
+          try {
+            const transactionId = pixPayment?.paymentId ? String(pixPayment.paymentId) : `pix-${Date.now()}`;
+            const items = [
+              {
+                item_id: MAIN_PRODUCT.id,
+                item_name: MAIN_PRODUCT.name,
+                price: Number(MAIN_PRODUCT.price.toFixed(2)),
+                quantity: 1,
+              },
+              ...(upsellSelected
+                ? [{
+                    item_id: UPSELL_PRODUCT.id,
+                    item_name: UPSELL_PRODUCT.name,
+                    price: Number(UPSELL_PRODUCT.price.toFixed(2)),
+                    quantity: 1,
+                  }]
+                : []),
+            ];
+            trackGaEvent('purchase', {
+              transaction_id: transactionId,
+              currency: 'BRL',
+              value: Number(totalAmount.toFixed(2)),
+              items,
+            });
           } catch {
             // ignore
           }
