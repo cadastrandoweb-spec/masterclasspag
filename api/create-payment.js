@@ -179,7 +179,13 @@ export default async function handler(req, res) {
     payer: {
       email: user.email,
       first_name: firstName,
-      last_name: lastName
+      last_name: lastName,
+      identification: documentDigits
+        ? {
+            type: documentDigits.length === 14 ? 'CNPJ' : 'CPF',
+            number: documentDigits
+          }
+        : undefined
     },
     external_reference: externalReference,
     additional_info: {
@@ -191,12 +197,6 @@ export default async function handler(req, res) {
           ? {
               area_code: String(user.phone).replace(/\D/g, '').slice(0, 2) || undefined,
               number: String(user.phone).replace(/\D/g, '').slice(2) || undefined
-            }
-          : undefined,
-        identification: documentDigits
-          ? {
-              type: documentDigits.length === 14 ? 'CNPJ' : 'CPF',
-              number: documentDigits
             }
           : undefined,
         address: user?.zipCode
