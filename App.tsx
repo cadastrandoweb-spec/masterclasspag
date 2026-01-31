@@ -393,31 +393,31 @@ const App: React.FC = () => {
           <div className="hidden md:block md:col-span-4" />
           <div className="md:col-span-8 flex justify-center">
             <div className="flex items-center gap-4">
-            <a
-              href="https://transparencyreport.google.com/safe-browsing/search?url=xandr.com.br&hl=pt_BR"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex"
-            >
+              <a
+                href="https://transparencyreport.google.com/safe-browsing/search?url=xandr.com.br&hl=pt_BR"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex"
+              >
+                <img
+                  src="/siteseguro.png"
+                  alt="Site seguro"
+                  className="h-8 w-auto"
+                />
+              </a>
               <img
-                src="/siteseguro.png"
-                alt="Site seguro"
-                className="h-8 w-auto"
+                src="/xandr.png"
+                alt="Xandr"
+                className="h-8 w-auto max-w-[120px] object-contain"
+                loading="eager"
+                decoding="async"
               />
-            </a>
-            <img
-              src="/xandr.png"
-              alt="Xandr"
-              className="h-8 w-auto"
-              loading="eager"
-              decoding="async"
-            />
             </div>
           </div>
         </div>
       </div>
     </div>
-  );
+);
 };
 
 export default App;
