@@ -48,12 +48,63 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const [cardInstallmentsLoading, setCardInstallmentsLoading] = useState(false);
   const [cardInstallmentsUnavailable, setCardInstallmentsUnavailable] = useState(false);
   const [cardInstallmentsDebug, setCardInstallmentsDebug] = useState<string>('');
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [testimonialProgress, setTestimonialProgress] = useState(0);
 
   const mpRef = useRef<any>(null);
   const mpFieldsRef = useRef<any>(null);
   const pixPurchaseTrackedRef = useRef(false);
 
   const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+
+  const testimonials = [
+    {
+      text: '“Gostei muito da agilidade. Paguei e o acesso chegou no meu e-mail na mesma hora. Já estou estudando.”',
+      author: 'Raul Gimenes - Aluno Mestres do Tráfego.',
+    },
+    {
+      text:
+        '“Estou gostando muito das aulas e sinto que, mesmo sendo leigo (uso da minha plataforma Wix), poderei dar mais profundidade e efetividade à minha obra.\nReceba meu fraterno abraço.\nFique com Deus! ”',
+      author: 'Blog Caminhando com Francisco',
+    },
+    {
+      text: '“Boa noite, Alexandre! Me tornei aluna do seu curso hoje e estou gostando muito.”',
+      author: 'Allana Oliveira',
+    },
+    {
+      text:
+        '“Estou gostando muito do curso, o conteúdo é bem prático e já está clareando várias ideias. Não vejo a hora de colocar tudo em prática.”',
+      author: 'Prof. João Piveta',
+    },
+    {
+      text: '“Comprei seu curso ontem e tô gostando bastante, agora vou testar a Plataforma Mestres SEO, muito obrigado.”',
+      author: 'Carlos André',
+    },
+    {
+      text: '“Boa noite! Parabéns pelo curso, gostando muito!”',
+      author: 'Portal Guavira',
+    },
+    {
+      text: '“Estou gostando muito da tua didática!”',
+      author: 'Ana Estrategista Digital',
+    },
+  ];
+
+  useEffect(() => {
+    if (!Array.isArray(testimonials) || testimonials.length <= 1) return;
+
+    setTestimonialProgress(0);
+    const raf = window.requestAnimationFrame(() => setTestimonialProgress(100));
+
+    const id = window.setTimeout(() => {
+      setTestimonialIndex((prev) => (prev + 1) % testimonials.length);
+    }, 15000);
+
+    return () => {
+      window.cancelAnimationFrame(raf);
+      window.clearTimeout(id);
+    };
+  }, [testimonialIndex]);
 
   const trackFbEvent = (eventName: string, params?: Record<string, any>) => {
     const fbq = (window as any)?.fbq;
@@ -925,9 +976,11 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                     )}
                   </div>
                 )}
+
                 {cardInstallmentsLoading && (
                   <div className="text-xs text-slate-500">Carregando parcelamento...</div>
                 )}
+
                 {!cardInstallmentsLoading && cardInstallmentsUnavailable && (
                   <div className="text-xs text-slate-500">
                     Parcelamento indisponível para este cartão.
@@ -936,6 +989,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                     </div>
                   </div>
                 )}
+
                 {cardError && (
                   <div className="text-xs text-red-500">{cardError}</div>
                 )}
@@ -954,10 +1008,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         </div>
       </div>
 
-      {/* SECTION 4: UPSELL / ORDER BUMP */}
       <div className="mb-8">
          <div className="bg-brand-50 border-2 border-dashed border-brand-200 rounded-xl p-4 relative overflow-hidden">
-            {/* Decorative background circle */}
             <div className="absolute -right-4 -top-4 w-20 h-20 bg-brand-100 rounded-full opacity-50 pointer-events-none"></div>
 
             <p className="font-bold text-slate-800 text-sm mb-3 relative z-10">
@@ -965,7 +1017,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             </p>
 
             <div className="flex items-start space-x-3 relative z-10">
-              <button 
+              <button
                 onClick={() => setUpsellSelected(!upsellSelected)}
                 className="mt-1 text-brand-600 hover:text-brand-700 transition-colors focus:outline-none"
               >
@@ -1019,12 +1071,20 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         </button>
         
         <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
-          <div className="text-sm text-slate-700 font-medium">
-            “Gostei muito da agilidade. Paguei e o acesso chegou no meu e-mail na mesma hora. Já estou estudando.”
+          <div className="text-sm text-slate-700 font-medium whitespace-pre-line">
+            {testimonials[testimonialIndex]?.text}
           </div>
           <div className="mt-2 text-xs text-slate-500">
-            Raul Gimenes - Aluno Mestres do Tráfego.
+            {testimonials[testimonialIndex]?.author}
           </div>
+          {testimonials.length > 1 && (
+            <div className="mt-3 h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
+              <div
+                className="h-full bg-brand-500 transition-[width] ease-linear"
+                style={{ width: `${testimonialProgress}%`, transitionDuration: '15000ms' }}
+              />
+            </div>
+          )}
         </div>
 
         <p className="mt-4 text-center text-xs text-slate-400 italic">
