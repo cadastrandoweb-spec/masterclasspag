@@ -8,6 +8,7 @@ interface OrderSummaryProps {
 
 export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected }) => {
   const total = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+  const supportPhotoUrl = String(import.meta.env.VITE_SUPPORT_PHOTO_URL || '').trim();
 
   return (
     <div className="flex flex-col space-y-4">
@@ -24,6 +25,23 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected }) =>
           className="h-8 w-auto"
         />
       </div>
+
+      {supportPhotoUrl && (
+        <div className="bg-white rounded-lg py-3 px-4 shadow-sm border border-slate-100 flex items-center gap-3">
+          <img
+            src={supportPhotoUrl}
+            alt="Suporte"
+            width={44}
+            height={44}
+            loading="eager"
+            decoding="async"
+            className="w-11 h-11 rounded-full object-cover border border-slate-200"
+          />
+          <div className="text-sm text-slate-700 font-medium leading-tight">
+            Suporte direto com Alexandre e Equipe
+          </div>
+        </div>
+      )}
 
       {/* Trust Badge */}
       <div className="bg-white rounded-lg py-3 px-4 shadow-sm border border-slate-100 flex items-center justify-center space-x-2 text-slate-600">

@@ -29,6 +29,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   errors,
   pixPayment
 }) => {
+
   const [loadingCep, setLoadingCep] = useState(false);
   const [pixStatus, setPixStatus] = useState<string | null>(null);
   const [pixChecking, setPixChecking] = useState(false);
@@ -564,7 +565,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
       {/* SECTION 1: USER DATA */}
       <div className="mb-8">
         <h2 className="text-lg font-semibold text-slate-800 mb-6 flex items-center">
-          OS SEUS DADOS
+          Para onde enviamos seu acesso?
         </h2>
         
         <div className="space-y-5">
@@ -590,6 +591,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             error={!!errors.email}
             errorMessage={errors.email}
           />
+
+          <div className="-mt-3 text-xs text-slate-500">
+            Fique tranquilo, não enviamos spam. Seus dados estão criptografados.
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div className="relative">
@@ -1008,11 +1013,20 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           ) : (
              <>
                <Lock size={20} />
-               <span>Comprar Agora</span>
+               <span>Sim! Quero Liberar Meu Acesso Imediato</span>
              </>
           )}
         </button>
         
+        <div className="mt-4 bg-slate-50 border border-slate-200 rounded-lg p-4">
+          <div className="text-sm text-slate-700 font-medium">
+            “Gostei muito da agilidade. Paguei e o acesso chegou no meu e-mail na mesma hora. Já estou estudando.”
+          </div>
+          <div className="mt-2 text-xs text-slate-500">
+            Raul Gimenes - Aluno Mestres do Tráfego.
+          </div>
+        </div>
+
         <p className="mt-4 text-center text-xs text-slate-400 italic">
           Ao seguir para o processo de pagamento declaro estar de acordo com os{' '}
           <a

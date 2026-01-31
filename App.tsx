@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { MessageCircle } from 'lucide-react';
 import { OrderSummary } from './components/OrderSummary';
 import { CheckoutForm } from './components/CheckoutForm';
 import { CardPaymentData, PaymentMethod, OrderForm, PaymentState, PixPaymentData } from './types';
@@ -6,6 +7,7 @@ import { processCheckout } from './services/mockService';
 import { MAIN_PRODUCT, UPSELL_PRODUCT } from './constants';
 
 const App: React.FC = () => {
+
   // --- STATE ---
   const [upsellSelected, setUpsellSelected] = useState<boolean>(false);
   const fbInitiateTrackedRef = useRef(false);
@@ -42,6 +44,11 @@ const App: React.FC = () => {
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({});
 
   const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+
+  const whatsappNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '');
+  const whatsappLink = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Oi! Estou com uma dúvida no pagamento. Pode me ajudar?')}`
+    : null;
 
   const trackFbEvent = (eventName: string, params?: Record<string, any>) => {
     const fbq = (window as any)?.fbq;
@@ -320,7 +327,36 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex justify-center">
-      <div className="w-full max-w-6xl">
+      <div className="fixed top-0 left-0 right-0 z-50">
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="text-sm text-amber-900 font-medium text-center">
+              Você está no ambiente seguro de pagamento da Xandr – A marca pessoal de Alexandre Ferreira (Criador do Mestres do Tráfego).
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {whatsappLink && (
+        <div className="fixed bottom-5 right-5 z-50">
+          <a
+            href={whatsappLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex items-center gap-3"
+            aria-label="Dúvida no pagamento? Fale comigo agora no WhatsApp"
+          >
+            <div className="hidden sm:block bg-white border border-slate-200 shadow-md rounded-full px-4 py-2 text-sm text-slate-700 group-hover:bg-slate-50 transition-colors">
+              Dúvida no pagamento? Fale comigo agora.
+            </div>
+            <div className="w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 shadow-lg flex items-center justify-center transition-colors">
+              <MessageCircle className="text-white" size={26} />
+            </div>
+          </a>
+        </div>
+      )}
+
+      <div className="w-full max-w-6xl pt-14">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
         
         {/* LEFT COLUMN (Summary) - Takes 4 cols on desktop */}
