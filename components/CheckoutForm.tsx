@@ -56,6 +56,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const pixPurchaseTrackedRef = useRef(false);
 
   const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+  const testimonialDurationMs = 10000;
 
   const testimonials = [
     {
@@ -98,7 +99,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
 
     const id = window.setTimeout(() => {
       setTestimonialIndex((prev) => (prev + 1) % testimonials.length);
-    }, 15000);
+    }, testimonialDurationMs);
 
     return () => {
       window.cancelAnimationFrame(raf);
@@ -1080,8 +1081,9 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           {testimonials.length > 1 && (
             <div className="mt-3 h-1.5 w-full rounded-full bg-slate-200 overflow-hidden">
               <div
+                key={testimonialIndex}
                 className="h-full bg-brand-500 transition-[width] ease-linear"
-                style={{ width: `${testimonialProgress}%`, transitionDuration: '15000ms' }}
+                style={{ width: `${testimonialProgress}%`, transitionDuration: `${testimonialDurationMs}ms` }}
               />
             </div>
           )}
