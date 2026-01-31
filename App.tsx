@@ -392,6 +392,7 @@ const App: React.FC = () => {
         <div className="mt-6 grid grid-cols-1 md:grid-cols-12">
           <div className="hidden md:block md:col-span-4" />
           <div className="md:col-span-8 flex justify-center">
+            <div className="flex items-center gap-4">
             <a
               href="https://transparencyreport.google.com/safe-browsing/search?url=xandr.com.br&hl=pt_BR"
               target="_blank"
@@ -401,9 +402,17 @@ const App: React.FC = () => {
               <img
                 src="/siteseguro.png"
                 alt="Site seguro"
-                className="w-[115px] max-w-[115px] h-auto"
+                className="h-8 w-auto"
               />
             </a>
+            <img
+              src="/xandr.png"
+              alt="Xandr"
+              className="h-8 w-auto"
+              loading="eager"
+              decoding="async"
+            />
+            </div>
           </div>
         </div>
       </div>
