@@ -1000,7 +1000,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           disabled={isProcessing}
           className={`
             w-full py-4 rounded-lg shadow-lg text-white font-bold text-lg uppercase tracking-wide
-            flex items-center justify-center space-x-2
+            flex items-center justify-center gap-2
             transition-all duration-200
             ${isProcessing 
               ? 'bg-slate-400 cursor-not-allowed' 
@@ -1012,7 +1012,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
              <span>Processando...</span>
           ) : (
              <>
-               <Lock size={20} />
+               <Lock size={20} className="shrink-0" />
                <span>Sim! Quero Liberar Meu Acesso Imediato</span>
              </>
           )}

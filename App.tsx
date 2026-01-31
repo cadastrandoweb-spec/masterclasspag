@@ -10,6 +10,7 @@ const App: React.FC = () => {
 
   // --- STATE ---
   const [upsellSelected, setUpsellSelected] = useState<boolean>(false);
+  const [showTopNotice, setShowTopNotice] = useState<boolean>(true);
   const fbInitiateTrackedRef = useRef(false);
   const initiateCheckoutSentRef = useRef(false);
   const initiateCheckoutEventIdRef = useRef<string | null>(null);
@@ -74,6 +75,16 @@ const App: React.FC = () => {
     // keep ref for backward compatibility; InitiateCheckout is now fired on submit
     fbInitiateTrackedRef.current = true;
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY || 0;
+      setShowTopNotice(y < 10);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   // --- LOGIC ---
@@ -327,7 +338,11 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex justify-center">
-      <div className="fixed top-0 left-0 right-0 z-50">
+      <div
+        className={`fixed top-0 left-0 right-0 z-50 transition-transform duration-200 ${
+          showTopNotice ? 'translate-y-0' : '-translate-y-full'
+        }`}
+      >
         <div className="bg-amber-50 border-b border-amber-200">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
             <div className="text-sm text-amber-900 font-medium text-center">
