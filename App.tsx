@@ -4,12 +4,13 @@ import { OrderSummary } from './components/OrderSummary';
 import { CheckoutForm } from './components/CheckoutForm';
 import { CardPaymentData, PaymentMethod, OrderForm, PaymentState, PixPaymentData } from './types';
 import { processCheckout } from './services/mockService';
-import { MAIN_PRODUCT, UPSELL_PRODUCT } from './constants';
+import { MAIN_PRODUCT, UPSELL_PRODUCT, UPSELL2_PRODUCT } from './constants';
 
 const App: React.FC = () => {
 
   // --- STATE ---
   const [upsellSelected, setUpsellSelected] = useState<boolean>(false);
+  const [upsell2Selected, setUpsell2Selected] = useState<boolean>(false);
   const [showTopNotice, setShowTopNotice] = useState<boolean>(true);
   const fbInitiateTrackedRef = useRef(false);
   const initiateCheckoutSentRef = useRef(false);
@@ -44,7 +45,10 @@ const App: React.FC = () => {
 
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({});
 
-  const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+  const totalAmount =
+    MAIN_PRODUCT.price +
+    (upsellSelected ? UPSELL_PRODUCT.price : 0) +
+    (upsell2Selected ? UPSELL2_PRODUCT.price : 0);
 
   const whatsappNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '');
   const whatsappLink = whatsappNumber
@@ -175,6 +179,14 @@ const App: React.FC = () => {
               quantity: 1,
             }]
           : []),
+        ...(upsell2Selected
+          ? [{
+              item_id: UPSELL2_PRODUCT.id,
+              item_name: UPSELL2_PRODUCT.name,
+              price: Number(UPSELL2_PRODUCT.price.toFixed(2)),
+              quantity: 1,
+            }]
+          : []),
       ];
       trackGaEvent('begin_checkout', {
         currency: 'BRL',
@@ -256,7 +268,7 @@ const App: React.FC = () => {
     setPaymentState(prev => ({ ...prev, isProcessing: true }));
 
     try {
-      const result = await processCheckout(formData, paymentMethod, upsellSelected, cardPaymentData);
+      const result = await processCheckout(formData, paymentMethod, upsellSelected, upsell2Selected, cardPaymentData);
 
       if (result.success) {
         if (paymentMethod === PaymentMethod.PIX && result.paymentId) {
@@ -300,6 +312,14 @@ const App: React.FC = () => {
                     item_id: UPSELL_PRODUCT.id,
                     item_name: UPSELL_PRODUCT.name,
                     price: Number(UPSELL_PRODUCT.price.toFixed(2)),
+                    quantity: 1,
+                  }]
+                : []),
+              ...(upsell2Selected
+                ? [{
+                    item_id: UPSELL2_PRODUCT.id,
+                    item_name: UPSELL2_PRODUCT.name,
+                    price: Number(UPSELL2_PRODUCT.price.toFixed(2)),
                     quantity: 1,
                   }]
                 : []),
@@ -377,7 +397,7 @@ const App: React.FC = () => {
         {/* LEFT COLUMN (Summary) - Takes 4 cols on desktop */}
         <div className="md:col-span-4 order-1 md:order-1">
           <div className="sticky top-8">
-             <OrderSummary upsellSelected={upsellSelected} />
+             <OrderSummary upsellSelected={upsellSelected} upsell2Selected={upsell2Selected} />
           </div>
         </div>
 
@@ -390,6 +410,8 @@ const App: React.FC = () => {
             setPaymentMethod={setPaymentMethod}
             upsellSelected={upsellSelected}
             setUpsellSelected={setUpsellSelected}
+            upsell2Selected={upsell2Selected}
+            setUpsell2Selected={setUpsell2Selected}
             onSubmit={handleSubmit}
             isProcessing={paymentState.isProcessing}
             errors={errors}

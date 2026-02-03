@@ -1,11 +1,12 @@
 import { CardPaymentData, OrderForm, PaymentMethod } from '../types';
-import { MAIN_PRODUCT, UPSELL_PRODUCT } from '../constants';
+import { MAIN_PRODUCT, UPSELL_PRODUCT, UPSELL2_PRODUCT } from '../constants';
 
 // This simulates the behavior of the Node.js backend
 export const processCheckout = async (
   formData: OrderForm,
   paymentMethod: PaymentMethod,
   hasUpsell: boolean,
+  hasUpsell2: boolean,
   cardPaymentData?: (CardPaymentData & { 
     paymentMethodId?: string; 
     installments?: number; 
@@ -42,7 +43,8 @@ export const processCheckout = async (
 
   const items = [
     { id: MAIN_PRODUCT.id, title: MAIN_PRODUCT.name, price: MAIN_PRODUCT.price },
-    ...(hasUpsell ? [{ id: UPSELL_PRODUCT.id, title: UPSELL_PRODUCT.name, price: UPSELL_PRODUCT.price }] : [])
+    ...(hasUpsell ? [{ id: UPSELL_PRODUCT.id, title: UPSELL_PRODUCT.name, price: UPSELL_PRODUCT.price }] : []),
+    ...(hasUpsell2 ? [{ id: UPSELL2_PRODUCT.id, title: UPSELL2_PRODUCT.name, price: UPSELL2_PRODUCT.price }] : [])
   ];
 
   const meta = getFbClickData();

@@ -15,5 +15,12 @@ export const UPSELL_PRODUCT: Product = {
   image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=200&q=80'
 };
 
+export const UPSELL2_PRODUCT: Product = {
+  id: 'upsell-prod-003',
+  name: 'Mentoria Audiência Inteligente',
+  price: 197.00,
+  image: '/logorico.png'
+};
+
 // API Endpoints (For the mock service)
 export const API_URL = 'http://localhost:3000'; // Assuming local backend for dev

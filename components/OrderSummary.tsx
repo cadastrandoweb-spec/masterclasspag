@@ -1,13 +1,17 @@
 import React from 'react';
 import { ShieldCheck, ShoppingCart } from 'lucide-react';
-import { MAIN_PRODUCT, UPSELL_PRODUCT } from '../constants';
+import { MAIN_PRODUCT, UPSELL_PRODUCT, UPSELL2_PRODUCT } from '../constants';
 
 interface OrderSummaryProps {
   upsellSelected: boolean;
+  upsell2Selected: boolean;
 }
 
-export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected }) => {
-  const total = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected, upsell2Selected }) => {
+  const total =
+    MAIN_PRODUCT.price +
+    (upsellSelected ? UPSELL_PRODUCT.price : 0) +
+    (upsell2Selected ? UPSELL2_PRODUCT.price : 0);
   const supportPhotoUrl = String(import.meta.env.VITE_SUPPORT_PHOTO_URL || '').trim();
 
   return (
@@ -84,6 +88,15 @@ export const OrderSummary: React.FC<OrderSummaryProps> = ({ upsellSelected }) =>
               <span className="text-xs bg-brand-100 px-2 py-0.5 rounded-full">+ Upsell</span>
             </div>
             <span>R$ {UPSELL_PRODUCT.price.toFixed(2).replace('.', ',')}</span>
+          </div>
+        )}
+
+        {upsell2Selected && (
+          <div className="flex justify-between items-center py-2 text-slate-500 text-sm border-b border-slate-100 animate-fadeIn">
+            <div className="flex items-center space-x-2 text-brand-600">
+              <span className="text-xs bg-brand-100 px-2 py-0.5 rounded-full">+ Upsell 2</span>
+            </div>
+            <span>R$ {UPSELL2_PRODUCT.price.toFixed(2).replace('.', ',')}</span>
           </div>
         )}
 

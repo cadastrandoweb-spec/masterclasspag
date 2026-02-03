@@ -84,6 +84,72 @@ async function sendMetaPurchaseEvent({
   return { ok: r.ok, status: r.status, data };
 }
 
+async function markMemboxDigitalGuruSent({ paymentId, accessToken }) {
+  if (!paymentId || !accessToken) return { skipped: true };
+
+  const url = `https://api.mercadopago.com/v1/payments/${encodeURIComponent(String(paymentId))}`;
+  const payload = {
+    metadata: {
+      membox_digitalguru_sent: true,
+      membox_digitalguru_sent_at: new Date().toISOString()
+    }
+  };
+
+  const r = await fetch(url, {
+    method: 'PUT',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await r.json().catch(() => null);
+  return { ok: r.ok, status: r.status, data };
+}
+
+async function callMemboxDigitalGuru({ customer, productName, paymentId }) {
+  const url = process.env.MEMBOX_DIGITALGURU_URL;
+  const token = process.env.MEMBOX_DIGITALGURU_TOKEN;
+
+  if (!url || !token) {
+    return { skipped: true, reason: 'missing_membox_digitalguru_env' };
+  }
+
+  const payload = {
+    type: 'insert',
+    customer: {
+      name: customer.name,
+      email: customer.email,
+      phone: customer.phone,
+      document: customer.document
+    },
+    product: {
+      name: productName
+    },
+    order_bumps: [{ id: 'upsell-prod-003' }],
+    payment_id: paymentId ? String(paymentId) : undefined
+  };
+
+  if (!payload.payment_id) delete payload.payment_id;
+
+  const r = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const text = await r.text();
+  if (!r.ok) {
+    throw new Error(`Membox digitalguru failed: ${r.status} ${text}`);
+  }
+
+  return { ok: true, status: r.status, text };
+}
+
 function getClientIp(req) {
   const candidates = [
     req.headers['x-vercel-forwarded-for'],
@@ -206,6 +272,16 @@ export default async function handler(req, res) {
       document: payment?.metadata?.customer_document
     };
 
+    const upsell2Purchased = (() => {
+      try {
+        const mpItems = payment?.metadata?.items;
+        const items = Array.isArray(mpItems) ? mpItems : [];
+        return items.some((it) => String(it?.id || '') === 'upsell-prod-003');
+      } catch {
+        return false;
+      }
+    })();
+
     const meta = {
       fbp: payment?.metadata?.meta_fbp,
       fbc: payment?.metadata?.meta_fbc,
@@ -247,6 +323,30 @@ export default async function handler(req, res) {
       }
     } catch (err) {
       console.error('Error sending Meta Purchase Event (PIX):', err);
+    }
+
+    if (upsell2Purchased) {
+      try {
+        const alreadySent =
+          payment?.metadata?.membox_digitalguru_sent === true || payment?.metadata?.membox_digitalguru_sent === 'true';
+        if (alreadySent) {
+          console.log('Membox digitalguru skipped: already sent for paymentId', payment?.id);
+        } else {
+          const productName = 'Mentoria Audiência Inteligente';
+          const result = await callMemboxDigitalGuru({ customer, productName, paymentId: payment?.id });
+          console.log('Membox digitalguru sent:', result);
+          if (result?.ok) {
+            try {
+              const markResult = await markMemboxDigitalGuruSent({ paymentId: payment?.id, accessToken });
+              console.log('Membox digitalguru marked on Mercado Pago:', markResult);
+            } catch (e) {
+              console.error('Error marking Membox digitalguru on Mercado Pago:', e);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error sending Membox digitalguru:', err);
+      }
     }
 
     // Campos obrigatórios no payload do Membox

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CreditCard, QrCode, CheckSquare, Square, AlertCircle, Lock, MapPin } from 'lucide-react';
 import { CardPaymentData, PaymentMethod, OrderForm, PixPaymentData } from '../types';
 import { Input } from './ui/Input';
-import { MAIN_PRODUCT, UPSELL_PRODUCT } from '../constants';
+import { MAIN_PRODUCT, UPSELL_PRODUCT, UPSELL2_PRODUCT } from '../constants';
 
 interface CheckoutFormProps {
   formData: OrderForm;
@@ -11,6 +11,8 @@ interface CheckoutFormProps {
   setPaymentMethod: (method: PaymentMethod) => void;
   upsellSelected: boolean;
   setUpsellSelected: (selected: boolean) => void;
+  upsell2Selected: boolean;
+  setUpsell2Selected: (selected: boolean) => void;
   onSubmit: (cardPaymentData?: (CardPaymentData & { paymentMethodId?: string })) => Promise<void>;
   isProcessing: boolean;
   errors: Partial<Record<keyof OrderForm, string>>;
@@ -24,6 +26,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   setPaymentMethod,
   upsellSelected,
   setUpsellSelected,
+  upsell2Selected,
+  setUpsell2Selected,
   onSubmit,
   isProcessing,
   errors,
@@ -55,7 +59,10 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const mpFieldsRef = useRef<any>(null);
   const pixPurchaseTrackedRef = useRef(false);
 
-  const totalAmount = MAIN_PRODUCT.price + (upsellSelected ? UPSELL_PRODUCT.price : 0);
+  const totalAmount =
+    MAIN_PRODUCT.price +
+    (upsellSelected ? UPSELL_PRODUCT.price : 0) +
+    (upsell2Selected ? UPSELL2_PRODUCT.price : 0);
   const testimonialDurationMs = 10000;
 
   const testimonials = [
@@ -214,6 +221,14 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                     item_id: UPSELL_PRODUCT.id,
                     item_name: UPSELL_PRODUCT.name,
                     price: Number(UPSELL_PRODUCT.price.toFixed(2)),
+                    quantity: 1,
+                  }]
+                : []),
+              ...(upsell2Selected
+                ? [{
+                    item_id: UPSELL2_PRODUCT.id,
+                    item_name: UPSELL2_PRODUCT.name,
+                    price: Number(UPSELL2_PRODUCT.price.toFixed(2)),
                     quantity: 1,
                   }]
                 : []),
@@ -1032,6 +1047,44 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                  <div>
                     <h4 className="font-semibold text-slate-700 text-sm">{UPSELL_PRODUCT.name}</h4>
                     <span className="font-bold text-slate-900 text-sm">R$ {UPSELL_PRODUCT.price.toFixed(2).replace('.', ',')}</span>
+                 </div>
+              </div>
+            </div>
+         </div>
+      </div>
+
+      <div className="mb-8">
+         <div className="bg-brand-50 border-2 border-dashed border-brand-200 rounded-xl p-4 relative overflow-hidden">
+            <div className="absolute -right-4 -top-4 w-20 h-20 bg-brand-100 rounded-full opacity-50 pointer-events-none"></div>
+
+            <p className="font-bold text-slate-800 text-sm mb-1 relative z-10">
+              Mentoria Audiência Inteligente
+            </p>
+            <p className="text-xs text-slate-600 mb-3 relative z-10">
+              (mentoria gravada com 20 aulas) - Aprenda construir audiência para o seu site.
+            </p>
+
+            <div className="flex items-start space-x-3 relative z-10">
+              <button
+                onClick={() => setUpsell2Selected(!upsell2Selected)}
+                className="mt-1 text-brand-600 hover:text-brand-700 transition-colors focus:outline-none"
+              >
+                {upsell2Selected ? <CheckSquare size={24} /> : <Square size={24} />}
+              </button>
+
+              <div className="flex space-x-3 flex-1">
+                 <div className="w-16 h-16 bg-black rounded-md overflow-hidden shrink-0">
+                    <img src={UPSELL2_PRODUCT.image} alt="Upsell" className="w-full h-full object-cover" />
+                 </div>
+                 <div>
+                    <h4 className="font-semibold text-slate-700 text-sm">{UPSELL2_PRODUCT.name}</h4>
+                    <div className="mt-0.5 text-xs text-slate-500">
+                      De <span className="line-through">R$ 480,00</span> por
+                    </div>
+                    <span className="font-bold text-slate-900 text-sm">R$ {UPSELL2_PRODUCT.price.toFixed(2).replace('.', ',')}</span>
+                    <div className="mt-1 text-[11px] text-brand-700 font-semibold">
+                      Essa promoção é por tempo limitado;
+                    </div>
                  </div>
               </div>
             </div>
