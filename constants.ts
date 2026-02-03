@@ -19,7 +19,7 @@ export const UPSELL2_PRODUCT: Product = {
   id: 'upsell-prod-003',
   name: 'Mentoria Audiência Inteligente',
   price: 197.00,
-  image: '/logorico.png'
+  image: '/logoa.png'
 };
 
 // API Endpoints (For the mock service)

@@ -1058,7 +1058,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
             <div className="absolute -right-4 -top-4 w-20 h-20 bg-brand-100 rounded-full opacity-50 pointer-events-none"></div>
 
             <p className="font-bold text-slate-800 text-sm mb-1 relative z-10">
-              Mentoria Audiência Inteligente
+              ACEITO ESSA OFERTA! Mentoria Audiência Inteligente
             </p>
             <p className="text-xs text-slate-600 mb-3 relative z-10">
               (mentoria gravada com 20 aulas) - Aprenda construir audiência para o seu site.
