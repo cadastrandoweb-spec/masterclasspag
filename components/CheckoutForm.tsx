@@ -1077,7 +1077,6 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                     <img src={UPSELL2_PRODUCT.image} alt="Upsell" className="w-full h-full object-cover" />
                  </div>
                  <div>
-                    <h4 className="font-semibold text-slate-700 text-sm">{UPSELL2_PRODUCT.name}</h4>
                     <div className="mt-0.5 text-xs text-slate-500">
                       De <span className="line-through">R$ 480,00</span> por
                     </div>
