@@ -58,6 +58,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
   const mpRef = useRef<any>(null);
   const mpFieldsRef = useRef<any>(null);
   const pixPurchaseTrackedRef = useRef(false);
+  const pixDetailsRef = useRef<HTMLDivElement | null>(null);
 
   const totalAmount =
     MAIN_PRODUCT.price +
@@ -268,6 +269,22 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pixPayment?.paymentId, paymentMethod]);
+
+  useEffect(() => {
+    if (paymentMethod !== PaymentMethod.PIX) return;
+    if (!pixPayment?.paymentId) return;
+
+    const el = pixDetailsRef.current;
+    if (!el) return;
+
+    window.setTimeout(() => {
+      try {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {
+        // ignore
+      }
+    }, 50);
+  }, [paymentMethod, pixPayment?.paymentId]);
 
   const refreshInstallments = async (args: {
     bin: string;
@@ -830,7 +847,7 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
                 </ul>
 
                 {pixPayment?.paymentId && (
-                  <div className="mt-4 border-t border-slate-200 pt-4">
+                  <div ref={pixDetailsRef} className="mt-4 border-t border-slate-200 pt-4">
                     <div className="text-xs text-slate-500 mb-2">
                       Após o pagamento, confirmamos automaticamente (pode levar alguns segundos).
                     </div>
