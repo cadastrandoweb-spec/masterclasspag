@@ -245,7 +245,11 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
           }
         }
         window.setTimeout(() => {
-          window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
+          const tid = pixPayment?.paymentId ? String(pixPayment.paymentId) : undefined;
+          const url = tid
+            ? `https://www.xandr.com.br/obrigado-trafegoadsense?tid=${encodeURIComponent(tid)}`
+            : 'https://www.xandr.com.br/obrigado-trafegoadsense';
+          window.location.href = url;
         }, 800);
       }
     } catch {

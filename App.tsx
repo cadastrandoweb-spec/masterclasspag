@@ -333,7 +333,11 @@ const App: React.FC = () => {
           }
 
           window.setTimeout(() => {
-            window.location.href = 'https://www.xandr.com.br/obrigado-trafegoadsense';
+            const tid = result.paymentId ? String(result.paymentId) : undefined;
+            const url = tid
+              ? `https://www.xandr.com.br/obrigado-trafegoadsense?tid=${encodeURIComponent(tid)}`
+              : 'https://www.xandr.com.br/obrigado-trafegoadsense';
+            window.location.href = url;
           }, 800);
           return;
         }
