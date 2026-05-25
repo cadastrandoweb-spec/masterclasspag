@@ -3,7 +3,7 @@ import { Product } from './types';
 export const MAIN_PRODUCT: Product = {
   id: 'main-prod-001',
   name: 'Mestres do Tráfego Vitalício',
-  price: 137.00,
+  price: 197.00,
   // OBS: Substitua a URL abaixo pelo link direto da imagem que você enviou após hospedá-la
   image: '/mestres.webp'
 };
