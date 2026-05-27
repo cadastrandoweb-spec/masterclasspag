@@ -4,7 +4,7 @@ import { OrderSummary } from './components/OrderSummary';
 import { CheckoutForm } from './components/CheckoutForm';
 import { CardPaymentData, PaymentMethod, OrderForm, PaymentState, PixPaymentData } from './types';
 import { processCheckout } from './services/mockService';
-import { MAIN_PRODUCT, UPSELL_PRODUCT, UPSELL2_PRODUCT } from './constants';
+import { MAIN_PRODUCT, UPSELL_PRODUCT, UPSELL2_PRODUCT, WHATSAPP_NUMBER } from './constants';
 
 const App: React.FC = () => {
 
@@ -50,7 +50,7 @@ const App: React.FC = () => {
     (upsellSelected ? UPSELL_PRODUCT.price : 0) +
     (upsell2Selected ? UPSELL2_PRODUCT.price : 0);
 
-  const whatsappNumber = String(import.meta.env.VITE_WHATSAPP_NUMBER || '').replace(/\D/g, '');
+  const whatsappNumber = String(WHATSAPP_NUMBER || '').replace(/\D/g, '');
   const whatsappLink = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Oi! Estou com uma dúvida no pagamento. Pode me ajudar?')}`
     : null;

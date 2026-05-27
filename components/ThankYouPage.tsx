@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle2, Mail, Video } from 'lucide-react';
-import { MAIN_PRODUCT } from '../constants';
+import { MAIN_PRODUCT, WHATSAPP_NUMBER } from '../constants';
 
 export const ThankYouPage: React.FC = () => {
   return (
@@ -62,7 +62,7 @@ export const ThankYouPage: React.FC = () => {
               Se você não receber o e-mail em até 5 minutos, entre em contato com o nosso suporte.
             </p>
             <a 
-              href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER || ''}?text=Oi! Comprei o curso e preciso de ajuda com o meu acesso.`}
+              href={`https://wa.me/${WHATSAPP_NUMBER}?text=Oi! Comprei o curso e preciso de ajuda com o meu acesso.`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-block bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-6 rounded-xl transition-colors"

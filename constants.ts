@@ -24,3 +24,5 @@ export const UPSELL2_PRODUCT: Product = {
 
 // API Endpoints (For the mock service)
 export const API_URL = 'http://localhost:3000'; // Assuming local backend for dev
+
+export const WHATSAPP_NUMBER = '5517997791922';
