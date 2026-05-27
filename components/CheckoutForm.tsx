@@ -247,8 +247,8 @@ export const CheckoutForm: React.FC<CheckoutFormProps> = ({
         window.setTimeout(() => {
           const tid = pixPayment?.paymentId ? String(pixPayment.paymentId) : undefined;
           const url = tid
-            ? `https://www.xandr.com.br/obrigado-masterclass-seo?tid=${encodeURIComponent(tid)}`
-            : 'https://www.xandr.com.br/obrigado-masterclass-seo';
+            ? `https://pagtomasterclassia.mestres.app/obrigado-masterclass-seo?tid=${encodeURIComponent(tid)}`
+            : 'https://pagtomasterclassia.mestres.app/obrigado-masterclass-seo';
           window.location.href = url;
         }, 800);
       }
