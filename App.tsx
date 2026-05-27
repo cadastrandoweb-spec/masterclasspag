@@ -335,8 +335,8 @@ const App: React.FC = () => {
           window.setTimeout(() => {
             const tid = result.paymentId ? String(result.paymentId) : undefined;
             const url = tid
-              ? `https://www.xandr.com.br/obrigado-trafegoadsense?tid=${encodeURIComponent(tid)}`
-              : 'https://www.xandr.com.br/obrigado-trafegoadsense';
+              ? `https://www.xandr.com.br/obrigado-masterclass-seo?tid=${encodeURIComponent(tid)}`
+              : 'https://www.xandr.com.br/obrigado-masterclass-seo';
             window.location.href = url;
           }, 800);
           return;
