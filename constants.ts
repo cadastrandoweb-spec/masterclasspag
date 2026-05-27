@@ -2,8 +2,8 @@ import { Product } from './types';
 
 export const MAIN_PRODUCT: Product = {
   id: 'main-prod-001',
-  name: 'Mestres do Tráfego Vitalício',
-  price: 197.00,
+  name: 'MasterClass SEO para Sites feitos com IA',
+  price: 39.90,
   // OBS: Substitua a URL abaixo pelo link direto da imagem que você enviou após hospedá-la
   image: '/mestres.webp'
 };
